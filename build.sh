@@ -4,18 +4,20 @@ set -xe
 
 APP=$1
 
-LIBRARIES=""
+EXT=""
 if [[ $OSTYPE == msys* || $OSTYPE == mingw* || $OSTYPE == cygwin* ]]; then
+    EXT=".exe"
     LIBRARIES="-lShlwapi -lwinmm -lws2_32"
 else
+    EXT=""
     LIBRARIES="-lm -lasound -lnsl -lresolv"
 fi
 
 mkdir -p out
 clang "./tests/$APP.c"\
     -Werror \
-    -o "./out/$APP" \
+    -o "./out/$APP$EXT" \
     $LIBRARIES
 
 cd out
-./$APP
+./$APP$EXT
