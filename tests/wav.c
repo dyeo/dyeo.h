@@ -1,5 +1,6 @@
 #define WAV_IMPLEMENTATION
 #include "../wav.h"
+#include "../test.h"
 
 #include <math.h>
 
@@ -15,7 +16,10 @@ int16_t gen_440hz_sine(uint32_t channels, uint32_t sampleRate,
 
 // -----------------------------------------------------------------------------
 int main() {
-  wav_audio *sine = wav_gen_pcm16(2, wav_44100hz, 44100 * 5, gen_440hz_sine);
-  wav_play(sine);
-  wav_dumpf("sine.wav", sine);
+  test_group(wav, {
+    wav_audio *sine = wav_gen_pcm16(2, wav_44100hz, 44100 * 5, gen_440hz_sine);
+    test_true(sine != NULL);
+    test_true(wav_play(sine));
+    test_true(wav_dumpf("sine.wav", sine));
+  });
 }

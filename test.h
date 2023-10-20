@@ -1,14 +1,14 @@
 #ifndef __TEST_H__
 #define __TEST_H__
 
+#include "inttypes.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "inttypes.h"
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-#if !defined(TEST_H_DISABLE_UNICODE) && \
+#if !defined(TEST_H_DISABLE_UNICODE) &&                                        \
     (defined(__STDC_ISO_10646__) || defined(_UNICODE) || defined(UNICODE))
 #define TEST_H_UNICODE
 #endif
@@ -121,75 +121,70 @@
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-#define _test_h_indent(S)                           \
-    do                                              \
-    {                                               \
-        for (int i = 0; i < _test_h_level * 2; ++i) \
-        {                                           \
-            fputc(' ', S);                          \
-        }                                           \
-    } while (0)
+#define _test_h_indent(S)                                                      \
+  do {                                                                         \
+    for (int i = 0; i < _test_h_level * 2; ++i) {                              \
+      fputc(' ', S);                                                           \
+    }                                                                          \
+  } while (0)
 
-#define test_true(Expr)                                                \
-    do                                                                 \
-    {                                                                  \
-        _test_h_level++;                                               \
-        if ((Expr))                                                    \
-        {                                                              \
-            _test_h_indent(stdout);                                    \
-            fprintf(stdout, _Lit(Pass) #Expr "\n");                    \
-            _test_h_passes++;                                          \
-        }                                                              \
-        else                                                           \
-        {                                                              \
-            _test_h_indent(stderr);                                    \
-            fprintf(stderr, _Lit(Fail) _Col(Warn) #Expr _Col(0) "\n"); \
-            _test_h_fails++;                                           \
-        }                                                              \
-        _test_h_level--;                                               \
-    } while (0)
+#define test_true(Expr)                                                        \
+  do {                                                                         \
+    _test_h_level++;                                                           \
+    fprintf(stdout, _Col(Hint));                                               \
+    if ((Expr)) {                                                              \
+      _test_h_indent(stdout);                                                  \
+      fprintf(stdout, _Lit(Pass) #Expr "\n");                                  \
+      _test_h_passes++;                                                        \
+    } else {                                                                   \
+      _test_h_indent(stderr);                                                  \
+      fprintf(stderr, _Lit(Fail) _Col(Warn) #Expr _Col(0) "\n"_Col(Hint));     \
+      _test_h_fails++;                                                         \
+    }                                                                          \
+    _test_h_level--;                                                           \
+  } while (0)
 
-#define test_expr(Expr, TRes, Res)                                                                               \
-    do                                                                                                           \
-    {                                                                                                            \
-        _test_h_level++;                                                                                         \
-        TRes _res = ((Res));                                                                                     \
-        TRes _expr = ((Expr));                                                                                   \
-        if (_ExEq(TRes, _expr, _res))                                                                            \
-        {                                                                                                        \
-            _test_h_indent(stdout);                                                                              \
-            fprintf(stdout,                                                                                      \
-                    _Lit(Pass) #Expr _Col(Hint) " == " _PFmt(TRes) _Col(0) "\n",                                 \
-                    _PArg(TRes, _res));                                                                          \
-            _test_h_passes++;                                                                                    \
-        }                                                                                                        \
-        else                                                                                                     \
-        {                                                                                                        \
-            _test_h_indent(stderr);                                                                              \
-            fprintf(stdout,                                                                                      \
-                    _Lit(Fail) _Col(Warn) #Expr _Col(Hint) " != " _PFmt(TRes) " (" _PFmt(TRes) ")" _Col(0) "\n", \
-                    _PArg(TRes, _res), _PArg(TRes, _expr));                                                      \
-            _test_h_fails++;                                                                                     \
-        }                                                                                                        \
-        _test_h_level--;                                                                                         \
-    } while (0)
+#define test_expr(Expr, TRes, Res)                                             \
+  do {                                                                         \
+    _test_h_level++;                                                           \
+    TRes _res = ((Res));                                                       \
+    TRes _expr = ((Expr));                                                     \
+    fprintf(stdout, _Col(Hint));                                               \
+    if (_ExEq(TRes, _expr, _res)) {                                            \
+      _test_h_indent(stdout);                                                  \
+      fprintf(stdout,                                                          \
+              _Lit(Pass) #Expr _Col(Hint) " == " _PFmt(TRes)                   \
+                  _Col(0) "\n"_Col(Hint),                                      \
+              _PArg(TRes, _res));                                              \
+      _test_h_passes++;                                                        \
+    } else {                                                                   \
+      _test_h_indent(stderr);                                                  \
+      fprintf(stdout,                                                          \
+              _Lit(Fail) _Col(Warn) #Expr _Col(Hint) " != " _PFmt(             \
+                  TRes) " (" _PFmt(TRes) ")" _Col(0) "\n"_Col(Hint),           \
+              _PArg(TRes, _res), _PArg(TRes, _expr));                          \
+      _test_h_fails++;                                                         \
+    }                                                                          \
+    _test_h_level--;                                                           \
+  } while (0)
 
-#define test_group(Name, Block)                                                                \
-    do                                                                                         \
-    {                                                                                          \
-        size_t _test_h_passes_##Name = _test_h_passes, _test_h_fails_##Name = _test_h_fails;   \
-        _test_h_indent(stdout);                                                                \
-        fprintf(stdout, _Col(Ping) "[" #Name "]" _Col(0) " Running tests...\n");               \
-        _test_h_level++;                                                                       \
-        {                                                                                      \
-            Block;                                                                             \
-        }                                                                                      \
-        _test_h_level--;                                                                       \
-        _test_h_indent(stdout);                                                                \
-        fprintf(stdout,                                                                        \
-                _Col(Info) "[" #Name "] %llu passed; %llu failed." _Col(0) "\n",               \
-                _test_h_passes - _test_h_passes_##Name, _test_h_fails - _test_h_fails_##Name); \
-    } while (0)
+#define test_group(Name, Block)                                                \
+  do {                                                                         \
+    size_t _test_h_passes_##Name = _test_h_passes,                             \
+           _test_h_fails_##Name = _test_h_fails;                               \
+    _test_h_indent(stdout);                                                    \
+    fprintf(stdout, _Col(Ping) "[" #Name                                       \
+                               "]" _Col(0) " Running tests...\n" _Col(Hint));  \
+    _test_h_level++;                                                           \
+    { Block; }                                                                 \
+    _test_h_level--;                                                           \
+    _test_h_indent(stdout);                                                    \
+    fprintf(stdout,                                                            \
+            _Col(Info) "[" #Name "] %llu passed; %llu failed."                 \
+                       "\n"_Col(0),                                            \
+            _test_h_passes - _test_h_passes_##Name,                            \
+            _test_h_fails - _test_h_fails_##Name);                             \
+  } while (0)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // test group state
