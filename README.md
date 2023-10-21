@@ -1,6 +1,7 @@
 # dyeo.h - single header c libraries
 
 - [cor.h](cor.h) - coroutines
+- [dt.h](dt.h) - datatag serializer/deserializer (superset of JSON)
 - [gm.h](gm.h) - vector/matrix/quaternion math
 - [ll.h](ll.h) - cross-platform library loading
 - [stream.h](stream.h) - byte streams
