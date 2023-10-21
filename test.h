@@ -37,6 +37,43 @@
 #define _LitFail _Col(Fail) "[FAIL] "_Col(0)
 #endif
 
+#ifndef _log_full
+#define _log_full(STDOUT, PREFIX, FORMAT, ...)                                 \
+  fprintf(STDOUT, PREFIX " " _Col(0) FORMAT NEWLINE, __VA_ARGS__)
+#endif
+
+// log info message
+#ifndef log_info
+#define log_info(FORMAT, ...)                                                  \
+  _log_full(stdout, _Col(Info) " ", FORMAT, __VA_ARGS__)
+#endif
+
+// log warning
+#ifndef log_warning
+#define log_warning(FORMAT, ...)                                               \
+  _log_full(stdout, _Col(Warn) "?", FORMAT, __VA_ARGS__)
+#endif
+
+// log a success or test pass
+#ifndef log_pass
+#define log_pass(FORMAT, ...)                                                  \
+  _log_full(stdout, _Col(Pass) "O", FORMAT, __VA_ARGS__)
+#endif
+
+// log a failure or test fail
+#ifndef log_error
+#define log_error(FORMAT, ...)                                                 \
+  _log_full(stderr, _Col(Fail) "X", FORMAT, __VA_ARGS__)
+#endif
+
+// log a command
+#ifndef log_cmd
+#define log_cmd(CMD, ARGS)                                                     \
+  _log_full(                                                                   \
+    stdout, _Col(Ping) ">", _Col(Ping) "%s" _Col(0) " %s", CMD, ARGS)
+#endif
+
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 #define _Col(Name) _Col##Name

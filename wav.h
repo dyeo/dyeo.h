@@ -183,6 +183,12 @@ static const char *wav_audioformat_names[] = {
 #undef X
 };
 
+static wav_audioformat wav_format_lookup[] = {
+#define X(NAME, TYPE, FORMAT, ...) FORMAT,
+  WAV_FORMAT_X_LIST
+#undef X
+};
+
 typedef enum wav_samplerate
 {
   wav_8000hz   = 8000,
@@ -1098,16 +1104,22 @@ void CALLBACK _pcm_out_win32(HWAVEOUT hwo,
   }
 }
 
-void _wav_play_pcm(char *data, DWORD dataLength, int bitDepth, int isFloat)
+void _wav_play_pcm(uint16_t format,
+                   uint16_t channels,
+                   uint32_t sampleRate,
+                   uint32_t sampleCount,
+                   uint16_t bitDepth,
+                   char *data)
 {
   WAVEFORMATEX wfx;
-  wfx.wFormatTag      = isFloat ? wav_float : wav_pcm;
-  wfx.nChannels       = 1;
-  wfx.nSamplesPerSec  = 44100;
-  wfx.wBitsPerSample  = bitDepth;
-  wfx.nBlockAlign     = (wfx.nChannels * wfx.wBitsPerSample) / 8;
-  wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
-  wfx.cbSize          = 0;
+  uint64_t bufferLength = sampleCount * channels * (bitDepth / 8);
+  wfx.wFormatTag        = format;
+  wfx.nChannels         = channels;
+  wfx.nSamplesPerSec    = sampleRate;
+  wfx.wBitsPerSample    = bitDepth;
+  wfx.nBlockAlign       = (channels * bitDepth) / 8;
+  wfx.nAvgBytesPerSec   = wfx.nSamplesPerSec * wfx.nBlockAlign;
+  wfx.cbSize            = 0;
   if (waveOutOpen(&_wav_win32_h_wav_out,
                   WAVE_MAPPER,
                   &wfx,
@@ -1121,7 +1133,7 @@ void _wav_play_pcm(char *data, DWORD dataLength, int bitDepth, int isFloat)
   _wav_win32_h_header =
     GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(WAVEHDR));
   _wav_win32_header.lpData         = data;
-  _wav_win32_header.dwBufferLength = dataLength;
+  _wav_win32_header.dwBufferLength = bufferLength;
   waveOutPrepareHeader(
     _wav_win32_h_wav_out, &_wav_win32_header, sizeof(WAVEHDR));
   waveOutWrite(_wav_win32_h_wav_out, &_wav_win32_header, sizeof(WAVEHDR));
@@ -1133,10 +1145,12 @@ static snd_pcm_t *_wav_linux_pcm_handle;
 static snd_pcm_uframes_t _wav_linux_frames;
 static char *_wav_linux_playbuf;
 
-void _wav_play_pcm(char *data,
-                   unsigned int dataLength,
-                   int bitDepth,
-                   int isFloat)
+void _wav_play_pcm(uint16_t format,
+                   uint16_t channels,
+                   uint32_t sampleRate,
+                   uint32_t sampleCount,
+                   uint16_t bitDepth,
+                   char *data)
 {
   int err;
   snd_pcm_hw_params_t *params;
@@ -1173,16 +1187,16 @@ void _wav_play_pcm(char *data,
   snd_pcm_hw_params(_wav_linux_pcm_handle, params);
   snd_pcm_hw_params_get_period_size(params, &_wav_linux_frames, NULL);
   _wav_linux_playbuf = (char *) malloc(_wav_linux_frames * 2);
-  while (dataLength > 0)
+  while (sampleCount > 0)
   {
-    int framesToWrite = dataLength / (bitDepth / 8);
+    int framesToWrite = sampleCount / (bitDepth / 8);
     if (framesToWrite > _wav_linux_frames)
     {
     framesToWrite = _wav_linux_frames;
     }
     memcpy(_wav_linux_playbuf, data, framesToWrite * (bitDepth / 8));
     data += framesToWrite * (bitDepth / 8);
-    dataLength -= framesToWrite * (bitDepth / 8);
+    sampleCount -= framesToWrite * (bitDepth / 8);
     err =
       snd_pcm_writei(_wav_linux_pcm_handle, _wav_linux_playbuf, framesToWrite);
     if (err == -EPIPE)
@@ -1208,32 +1222,21 @@ bool wav_play_async(const wav_audio *wav)
   switch (wav->format)
   {
     default:
-    printf("ERROR: Invalid WAV format\n");
+    fprintf(stderr, "ERROR: Invalid data format\n");
     return false;
-    case wav_pcm16:
-    {
-    _wav_play_pcm((char *) wav->pcm16[0],
-                  wav->sampleCount,
-                  sizeof **(wav->pcm16) * 8,
-                  false);
-    break;
-    }
-    case wav_pcm32:
-    {
-    _wav_play_pcm((char *) wav->pcm32[0],
-                  wav->sampleCount,
-                  sizeof **(wav->pcm32) * 8,
-                  false);
-    break;
-    }
-    case wav_float32:
-    {
-    _wav_play_pcm((char *) wav->float32[0],
-                  wav->sampleCount,
-                  sizeof **(wav->float32) * 8,
-                  true);
-    break;
-    }
+#define X(NAME, TYPE, FORMAT, ENCODED, OUTTYPE)                                \
+  case wav_##NAME:                                                             \
+  {                                                                            \
+    _wav_play_pcm(wav_format_lookup[wav_##NAME],                               \
+                  wav->channels,                                               \
+                  wav->sampleRate,                                             \
+                  wav->sampleCount,                                            \
+                  sizeof **(wav->NAME) * 8,                                    \
+                  (char *) wav->NAME);                                         \
+    break;                                                                     \
+  }
+    WAV_FORMAT_X_LIST
+#undef X
   }
   return true;
 }
