@@ -1,3 +1,31 @@
+/*
+# args.h - argument parser
+
+## Usage
+
+Include `args.h` and you're set.
+
+## API Documentation
+
+- `argdefaults()`: Sets up the default help message flag
+- `argvar(Name, Type, [Message], [Default])`: Sets up a variable for its value
+to be parsed into as an option. This will either be a single letter flag like
+-a, or a long flag like -asdf, --asdf
+- `argflag(Name, [Message], [Default])`: Sets up a bool variable to be parsed
+into. This kind of flag's value is set by providing the flag itself.
+- `argreqd(Name)`: Marks a flag in the arguments as required.
+- `argpop(Name, Type, [Message], [Default])`: Sets up a variable to be popped
+off after parsing the options. These are required.
+- `argparse(Argc, Argv):` Parses out the arguments.
+- `popargs(Argc, Argv):` Pops off the trailing arguments after calling
+`argparse`.
+
+## Notes
+
+- This supports -flag value and -flag=value syntax
+- Compound single-letter flags like -abc are supported as long as all of the
+single-letter flags exist. Else, the whole flag will be treated as invalid.
+*/
 #ifndef _ARGS_H
 #define _ARGS_H
 
@@ -255,8 +283,21 @@ static inline void argprinthelp(FILE *const stream)
     __argscount++;                                                             \
   } while (0)
 
-#define poparg(...) _poparg(__VA_ARGS__, NULL, NULL)
-#define _poparg(VAR, TYPE, MESSAGE, DEFAULT, ...)                              \
+#define argflag(VAR, ...)                                                      \
+  argvar(VAR, bool, __VA_ARGS__, NULL, NULL);                                  \
+  do                                                                           \
+  {                                                                            \
+    __args[__arg_##VAR##_i].flag = true;                                       \
+  } while (0)
+
+#define argreqd(VAR)                                                           \
+  do                                                                           \
+  {                                                                            \
+    __args[__arg_##VAR##_i].reqd = true;                                       \
+  } while (0)
+
+#define argpop(...) _argpop(__VA_ARGS__, NULL, NULL)
+#define _argpop(VAR, TYPE, MESSAGE, DEFAULT, ...)                              \
   const int __arg_##VAR##_i = __argpcount;                                     \
   TYPE VAR;                                                                    \
   do                                                                           \
@@ -271,19 +312,6 @@ static inline void argprinthelp(FILE *const stream)
     __argp[__arg_##VAR##_i].reqd = true;                                       \
     __argp[__arg_##VAR##_i].sing = strlen(#VAR) == 1;                          \
     __argpcount++;                                                             \
-  } while (0)
-
-#define argflag(VAR, ...)                                                      \
-  argvar(VAR, bool, __VA_ARGS__, NULL, NULL);                                  \
-  do                                                                           \
-  {                                                                            \
-    __args[__arg_##VAR##_i].flag = true;                                       \
-  } while (0)
-
-#define argreqd(VAR)                                                           \
-  do                                                                           \
-  {                                                                            \
-    __args[__arg_##VAR##_i].reqd = true;                                       \
   } while (0)
 
 #define argparse(ARGC, ARGV)                                                   \
@@ -402,7 +430,7 @@ static inline void argprinthelp(FILE *const stream)
     }                                                                          \
   } while (0)
 
-#define argpopend(ARGC, ARGV)                                                  \
+#define popargs(ARGC, ARGV)                                                    \
   do                                                                           \
   {                                                                            \
     if (__argc < __argpcount)                                                  \
@@ -423,3 +451,44 @@ static inline void argprinthelp(FILE *const stream)
 #endif
 
 #endif
+/*
+This software is served under two licenses - pick which you prefer.
+--------------------------------------------------------------------------------
+MIT License
+Copyright 2023 Dani Yeomans
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+--------------------------------------------------------------------------------
+Public Domain
+Dedicated 2023 Dani Yeomans
+
+The author of this software and associated documentation files (the "Software")
+also dedicates any and all copyright interest in the Software to the public
+domain. The author makes this dedication for the benefit of the public at large
+and to the detriment of the author's heirs and successors. The author intends
+this dedication to be an overt act of relinquishment in perpetuity of all
+present and future rights to the Software under copyright law.
+
+Any person obtaining a copy of the Software and associated documentation files
+(the "Software") is free to to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to permit
+persons to whom the Software is furnished to do so, subject to no conditions.
+--------------------------------------------------------------------------------
+*/
