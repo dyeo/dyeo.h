@@ -1180,8 +1180,8 @@ void _wav_play_pcm(uint16_t format,
       _wav_linux_pcm_handle, params, SND_PCM_FORMAT_S32_LE);
     }
   }
-  snd_pcm_hw_params_set_channels(_wav_linux_pcm_handle, params, 1);
-  unsigned int sampleRate = 44100;
+  snd_pcm_hw_params_set_channels(_wav_linux_pcm_handle, params, channels);
+  unsigned int sampleRate = sampleRate;
   snd_pcm_hw_params_set_rate_near(
     _wav_linux_pcm_handle, params, &sampleRate, NULL);
   snd_pcm_hw_params(_wav_linux_pcm_handle, params);
