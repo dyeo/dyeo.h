@@ -101,14 +101,16 @@ extern "C" {
 #define BYTE uint8_t
 #endif
 
-typedef struct STREAM {
+typedef struct STREAM
+{
   BYTE *buffer;
   size_t offset;
   size_t length;
   size_t capacity;
 } STREAM;
 
-typedef struct STREAMITER {
+typedef struct STREAMITER
+{
   STREAM *stream;
   size_t offset;
   size_t i;
@@ -153,10 +155,11 @@ typedef struct STREAMITER *STREAMRITER;
 #define srihasnext streamriter_hasnext
 #endif
 
-#define stream_length(stream) ((stream) ? ((ptrdiff_t)(stream)->length) : 0l)
-#define stream_lengthu(stream) ((stream) ? ((size_t)(stream)->length) : 0)
-#define stream_capacity(stream) ((stream) ? ((ptrdiff_t)(stream)->capacity) : 0)
-#define stream_capacityu(stream) ((stream) ? ((size_t)(stream)->capacity) : 0)
+#define stream_length(stream) ((stream) ? ((ptrdiff_t) (stream)->length) : 0l)
+#define stream_lengthu(stream) ((stream) ? ((size_t) (stream)->length) : 0)
+#define stream_capacity(stream)                                                \
+  ((stream) ? ((ptrdiff_t) (stream)->capacity) : 0)
+#define stream_capacityu(stream) ((stream) ? ((size_t) (stream)->capacity) : 0)
 #define stream_empty(stream) (stream_lengthu(stream) == 0)
 
 #define stream_begptr(stream) ((stream)->buffer + (stream)->offset)
@@ -170,17 +173,17 @@ typedef struct STREAMITER *STREAMRITER;
 #define stream_growcap(Stream, Capacity)                                       \
   ((Stream) = _stream_growcap(stream, Capacity))
 #define stream_pushb(Stream, Len, Bytes)                                       \
-  ((Stream) = _stream_pushb(Stream, Len, (BYTE *)Bytes))
+  ((Stream) = _stream_pushb(Stream, Len, (BYTE *) Bytes))
 #define stream_enqb stream_pushb
 #define stream_insb(Stream, Len, Bytes, Idx)                                   \
-  ((Stream) = _stream_insb(Stream, Len, (BYTE *)Bytes, Idx))
+  ((Stream) = _stream_insb(Stream, Len, (BYTE *) Bytes, Idx))
 #define stream_pushbz(Stream, Len) ((Stream) = _stream_pushbz(Stream, Len))
 #define stream_insbz(Stream, Len, Idx)                                         \
   ((Stream) = _stream_insbz(Stream, Len, Idx))
-#define stream_popb(Stream, Len) ((BYTE *)_stream_popb(Stream, Len))
-#define stream_deqb(Stream, Len) ((BYTE *)_stream_deqb(Stream, Len))
+#define stream_popb(Stream, Len) ((BYTE *) _stream_popb(Stream, Len))
+#define stream_deqb(Stream, Len) ((BYTE *) _stream_deqb(Stream, Len))
 #define stream_seek(Stream, Idx) (_stream_seek(Stream, Idx))
-#define stream_tell(Stream) ((Stream) ? (ptrdiff_t)(Stream)->offset : 0)
+#define stream_tell(Stream) ((Stream) ? (ptrdiff_t) (Stream)->offset : 0)
 #define stream_read(Stream, DataPtr, Size, Count)                              \
   (_stream_read(Stream, DataPtre, Size, Count))
 #define stream_write(Stream, DataPtr, Size, Count)                             \
@@ -203,19 +206,21 @@ extern STREAM *_stream_setcap(STREAM *stream, const size_t capacity);
 extern STREAM *_stream_growcap(STREAM *stream, const size_t mincap);
 extern STREAM *_stream_reoffset(STREAM *stream, const size_t pos);
 extern STREAM *_stream_pushbz(STREAM *stream, const size_t length);
-extern STREAM *_stream_insbz(STREAM *stream, const size_t length,
-                             const size_t i);
-extern STREAM *_stream_pushb(STREAM *stream, const size_t length,
-                             const BYTE *Bytes);
-extern STREAM *_stream_insb(STREAM *stream, const size_t length,
-                            const BYTE *Bytes, const size_t i);
+extern STREAM *
+_stream_insbz(STREAM *stream, const size_t length, const size_t i);
+extern STREAM *
+_stream_pushb(STREAM *stream, const size_t length, const BYTE *Bytes);
+extern STREAM *_stream_insb(STREAM *stream,
+                            const size_t length,
+                            const BYTE *Bytes,
+                            const size_t i);
 extern BYTE *_stream_popb(STREAM *stream, const size_t length);
 extern BYTE *_stream_deqb(STREAM *stream, const size_t length);
 extern int _stream_seek(STREAM *stream, const ptrdiff_t offset, int whence);
-extern size_t _stream_read(STREAM *stream, void *ptr, size_t size,
-                           size_t count);
-extern size_t _stream_write(STREAM *stream, const void *ptr, size_t size,
-                            size_t count);
+extern size_t
+_stream_read(STREAM *stream, void *ptr, size_t size, size_t count);
+extern size_t
+_stream_write(STREAM *stream, const void *ptr, size_t size, size_t count);
 extern STREAMITER _streamiter(STREAM *stream);
 extern void _streamiter_reset(STREAMITER iter);
 extern BYTE _streamiter_next(STREAMITER iter);
@@ -257,8 +262,10 @@ extern int _streamriter_hasnext(STREAMRITER iter);
 #define max(L, R) ((L) > (R) ? (L) : (R))
 #endif
 
-STREAM_CDECL int _stream_free(STREAM *stream) {
-  if (!stream || !stream->buffer) {
+STREAM_CDECL int _stream_free(STREAM *stream)
+{
+  if (!stream || !stream->buffer)
+  {
     return 0;
   }
   free(stream->buffer);
@@ -266,205 +273,252 @@ STREAM_CDECL int _stream_free(STREAM *stream) {
   return 1;
 }
 
-STREAM_CDECL int _stream_clear(STREAM *stream) {
-  if (!stream || !stream->buffer) {
+STREAM_CDECL int _stream_clear(STREAM *stream)
+{
+  if (!stream || !stream->buffer)
+  {
     return 0;
   }
   stream->offset = stream->length = 0;
   return 1;
 }
 
-STREAM_CDECL STREAM *_stream_setcap(STREAM *stream, const size_t capacity) {
+STREAM_CDECL STREAM *_stream_setcap(STREAM *stream, const size_t capacity)
+{
   size_t mincap =
-      capacity < STREAM_MIN_CAPACITY ? STREAM_MIN_CAPACITY : capacity;
-  if (!stream) {
-    stream = (STREAM *)malloc(sizeof(STREAM));
-    if (!stream) {
+    capacity < STREAM_MIN_CAPACITY ? STREAM_MIN_CAPACITY : capacity;
+  if (!stream)
+  {
+    stream = (STREAM *) malloc(sizeof(STREAM));
+    if (!stream)
+    {
       fprintf(stderr, "ERROR: Memory allocation error");
       return NULL;
     }
     stream->offset = 0;
     stream->length = 0;
-    stream->buffer = (BYTE *)malloc(mincap);
-    if (!stream->buffer) {
+    stream->buffer = (BYTE *) malloc(mincap);
+    if (!stream->buffer)
+    {
       fprintf(stderr, "ERROR: Memory allocation error");
       return NULL;
     }
   }
-  if (stream->capacity == mincap) {
+  if (stream->capacity == mincap)
+  {
     return stream;
   }
-  stream->buffer = (BYTE *)realloc(stream->buffer, mincap);
-  if (!stream->buffer) {
+  stream->buffer = (BYTE *) realloc(stream->buffer, mincap);
+  if (!stream->buffer)
+  {
     fprintf(stderr, "ERROR: Memory allocation error");
     return NULL;
   }
   return stream;
 }
 
-STREAM_CDECL STREAM *_stream_growcap(STREAM *stream, const size_t mincap) {
-  if (!stream || (stream_lengthu(stream) < mincap)) {
+STREAM_CDECL STREAM *_stream_growcap(STREAM *stream, const size_t mincap)
+{
+  if (!stream || (stream_lengthu(stream) < mincap))
+  {
     return _stream_setcap(stream, mincap);
   }
   return stream;
 }
 
-STREAM_CDECL STREAM *_stream_reoffset(STREAM *stream, const size_t pos) {
-  if (!stream) {
+STREAM_CDECL STREAM *_stream_reoffset(STREAM *stream, const size_t pos)
+{
+  if (!stream)
+  {
     return stream;
   }
   size_t i = min(pos, stream->capacity - stream->length);
-  if (i == stream->offset) {
+  if (i == stream->offset)
+  {
     return stream;
   }
   memmove(stream->buffer + stream->offset, stream->buffer + i, stream->length);
   stream->offset = i;
-  if (stream->offset > stream->length) {
+  if (stream->offset > stream->length)
+  {
     stream = _stream_reoffset(stream, 0);
   }
   return stream;
 }
 
-STREAM_CDECL STREAM *_stream_pushbz(STREAM *stream, const size_t length) {
+STREAM_CDECL STREAM *_stream_pushbz(STREAM *stream, const size_t length)
+{
   size_t slen = stream_lengthu(stream);
-  stream = _stream_growcap(stream, slen + length);
+  stream      = _stream_growcap(stream, slen + length);
   memset(stream->buffer + stream->offset + slen, 0, length);
   stream->length += length;
   return stream;
 }
 
-STREAM_CDECL STREAM *_stream_insbz(STREAM *stream, const size_t length,
-                                   const size_t i) {
+STREAM_CDECL STREAM *
+_stream_insbz(STREAM *stream, const size_t length, const size_t i)
+{
   size_t slen = stream_lengthu(stream);
-  stream = _stream_growcap(stream, slen + length);
+  stream      = _stream_growcap(stream, slen + length);
   memmove(stream->buffer + stream->offset + i + length,
-          stream->buffer + stream->offset + i, length);
+          stream->buffer + stream->offset + i,
+          length);
   memset(stream->buffer + stream->offset + i, 0, length);
   stream->length += length;
   return stream;
 }
 
-STREAM_CDECL STREAM *_stream_pushb(STREAM *stream, const size_t length,
-                                   const BYTE *Bytes) {
+STREAM_CDECL STREAM *
+_stream_pushb(STREAM *stream, const size_t length, const BYTE *Bytes)
+{
   size_t slen = stream_lengthu(stream);
-  stream = _stream_growcap(stream, slen + length);
+  stream      = _stream_growcap(stream, slen + length);
   memcpy(stream->buffer + stream->offset + slen, Bytes, length);
   stream->length += length;
   return stream;
 }
 
-STREAM_CDECL STREAM *_stream_insb(STREAM *stream, const size_t length,
-                                  const BYTE *Bytes, const size_t i) {
+STREAM_CDECL STREAM *_stream_insb(STREAM *stream,
+                                  const size_t length,
+                                  const BYTE *Bytes,
+                                  const size_t i)
+{
   size_t slen = stream_lengthu(stream);
-  stream = _stream_growcap(stream, slen + length);
+  stream      = _stream_growcap(stream, slen + length);
   memmove(stream->buffer + stream->offset + i + length,
-          stream->buffer + stream->offset + i, length);
+          stream->buffer + stream->offset + i,
+          length);
   memcpy(stream->buffer + stream->offset + i, Bytes, length);
   stream->length += length;
   return stream;
 }
 
 STREAM_CDECL STREAM_VOlATILE BYTE *_stream_popb(STREAM *stream,
-                                                const size_t length) {
+                                                const size_t length)
+{
   size_t maxlen = min(length, stream->length);
-  BYTE *result = stream->buffer + stream->offset + stream->length - maxlen;
+  BYTE *result  = stream->buffer + stream->offset + stream->length - maxlen;
   stream->length -= maxlen;
   return result;
 }
 
 STREAM_CDECL STREAM_VOlATILE BYTE *_stream_deqb(STREAM *stream,
-                                                const size_t length) {
+                                                const size_t length)
+{
   size_t maxlen = min(length, stream->length);
   stream->length -= maxlen;
   BYTE *result = stream->buffer + stream->offset;
   stream->offset += maxlen;
-  if (stream->offset > stream->length) {
+  if (stream->offset > stream->length)
+  {
     stream = _stream_reoffset(stream, 0);
   }
   return result;
 }
 
-STREAM_CDECL int _stream_seek(STREAM *stream, ptrdiff_t offset, int whence) {
-  if (!stream || !stream->buffer) {
+STREAM_CDECL int _stream_seek(STREAM *stream, ptrdiff_t offset, int whence)
+{
+  if (!stream || !stream->buffer)
+  {
     return 0;
   }
   size_t newOffset = 0;
-  switch (whence) {
-  case SEEK_SET:
-    newOffset = offset;
-    break;
-  case SEEK_CUR:
-    newOffset = stream->offset + offset;
-    break;
-  case SEEK_END:
-    newOffset = stream->length + offset;
-    break;
-  default:
-    return 0;
+  switch (whence)
+  {
+    case SEEK_SET:
+      newOffset = offset;
+      break;
+    case SEEK_CUR:
+      newOffset = stream->offset + offset;
+      break;
+    case SEEK_END:
+      newOffset = stream->length + offset;
+      break;
+    default:
+      return 0;
   }
-  if (newOffset > stream->length) {
+  if (newOffset > stream->length)
+  {
     return 0;
   }
   stream->offset = newOffset;
   return 1;
 }
 
-STREAM_CDECL size_t _stream_read(STREAM *stream, void *ptr, size_t size,
-                                 size_t count) {
-  if (!stream || !stream->buffer || !ptr || !size || !count) {
+STREAM_CDECL size_t _stream_read(STREAM *stream,
+                                 void *ptr,
+                                 size_t size,
+                                 size_t count)
+{
+  if (!stream || !stream->buffer || !ptr || !size || !count)
+  {
     return 0;
   }
   size_t bytesToRead = size * count;
-  if (bytesToRead > stream->length) {
-    count = stream->length / size;
+  if (bytesToRead > stream->length)
+  {
+    count       = stream->length / size;
     bytesToRead = size * count;
   }
-  memcpy(ptr, (void *)stream->buffer, bytesToRead);
+  memcpy(ptr, (void *) stream->buffer, bytesToRead);
   return count;
 }
 
-STREAM_CDECL size_t _stream_write(STREAM *stream, const void *ptr, size_t size,
-                                  size_t count) {
-  if (!stream || !ptr || !size || !count) {
+STREAM_CDECL size_t _stream_write(STREAM *stream,
+                                  const void *ptr,
+                                  size_t size,
+                                  size_t count)
+{
+  if (!stream || !ptr || !size || !count)
+  {
     return 0;
   };
   size_t bytesToWrite = size * count;
-  if (!stream_growcap(stream, bytesToWrite)) {
+  if (!stream_growcap(stream, bytesToWrite))
+  {
     return 0;
   }
-  memcpy((void *)stream->buffer, ptr, bytesToWrite);
+  memcpy((void *) stream->buffer, ptr, bytesToWrite);
   stream->length += bytesToWrite;
   return count;
 }
 
-STREAM_CDECL STREAMITER _streamiter(STREAM *stream) {
-  if (!stream) {
+STREAM_CDECL STREAMITER _streamiter(STREAM *stream)
+{
+  if (!stream)
+  {
     return NULL;
   }
   STREAMITER iter = malloc(sizeof(struct STREAMITER));
-  iter->stream = stream;
-  iter->offset = stream->offset;
-  iter->i = 0;
+  iter->stream    = stream;
+  iter->offset    = stream->offset;
+  iter->i         = 0;
   return iter;
 }
 
-STREAM_CDECL void _streamiter_reset(STREAMITER iter) {
-  if (iter->stream) {
+STREAM_CDECL void _streamiter_reset(STREAMITER iter)
+{
+  if (iter->stream)
+  {
     iter->offset = iter->stream->offset;
-    iter->i = 0;
+    iter->i      = 0;
   }
 }
 
-STREAM_CDECL BYTE _streamiter_curr(STREAMITER iter) {
-  if (!_streamiter_hasnext(iter)) {
+STREAM_CDECL BYTE _streamiter_curr(STREAMITER iter)
+{
+  if (!_streamiter_hasnext(iter))
+  {
     return 0;
   }
   BYTE curr = (iter->stream->buffer)[iter->offset + iter->i];
   return curr;
 }
 
-STREAM_CDECL BYTE _streamiter_next(STREAMITER iter) {
-  if (!_streamiter_hasnext(iter)) {
+STREAM_CDECL BYTE _streamiter_next(STREAMITER iter)
+{
+  if (!_streamiter_hasnext(iter))
+  {
     return 0;
   }
   BYTE curr = iter->stream->buffer[iter->offset + iter->i];
@@ -472,42 +526,50 @@ STREAM_CDECL BYTE _streamiter_next(STREAMITER iter) {
   return curr;
 }
 
-STREAM_CDECL int _streamiter_hasnext(STREAMITER iter) {
+STREAM_CDECL int _streamiter_hasnext(STREAMITER iter)
+{
   return (iter && iter->stream &&
           (iter->offset + iter->i) < iter->stream->length);
 }
 
-STREAM_CDECL STREAMRITER _streamriter(STREAM *stream) {
-  if (!stream) {
+STREAM_CDECL STREAMRITER _streamriter(STREAM *stream)
+{
+  if (!stream)
+  {
     return NULL;
   }
   STREAMRITER iter = malloc(sizeof(struct STREAMITER));
-  iter->stream = stream;
-  iter->offset = stream->offset;
-  iter->i = 0;
+  iter->stream     = stream;
+  iter->offset     = stream->offset;
+  iter->i          = 0;
   return iter;
 }
 
-STREAM_CDECL BYTE _streamriter_curr(STREAMRITER iter) {
-  if (!_streamriter_hasnext(iter)) {
+STREAM_CDECL BYTE _streamriter_curr(STREAMRITER iter)
+{
+  if (!_streamriter_hasnext(iter))
+  {
     return 0;
   }
   BYTE curr =
-      (iter->stream->buffer)[iter->offset + iter->stream->length - iter->i];
+    (iter->stream->buffer)[iter->offset + iter->stream->length - iter->i];
   return curr;
 }
 
-STREAM_CDECL BYTE _streamriter_next(STREAMRITER iter) {
-  if (!_streamriter_hasnext(iter)) {
+STREAM_CDECL BYTE _streamriter_next(STREAMRITER iter)
+{
+  if (!_streamriter_hasnext(iter))
+  {
     return 0;
   }
   BYTE curr =
-      iter->stream->buffer[iter->offset + iter->stream->length - iter->i];
+    iter->stream->buffer[iter->offset + iter->stream->length - iter->i];
   iter->i++;
   return curr;
 }
 
-STREAM_CDECL int _streamriter_hasnext(STREAMRITER iter) {
+STREAM_CDECL int _streamriter_hasnext(STREAMRITER iter)
+{
   return (iter && iter->stream &&
           (iter->offset + iter->i) <= iter->stream->length);
 }

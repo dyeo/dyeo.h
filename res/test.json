@@ -1,0 +1,26 @@
+{
+    "app_name": "MyApp",
+    "version": "1.0",
+    "settings": {
+        "debug_mode": true,
+        "max_connections": 100,
+        "timeout": 30.0,
+        "features": [
+            "feature1",
+            "feature2",
+            "feature3"
+        ]
+    },
+    "database": {
+        "host": "localhost",
+        "port": 5432,
+        "username": "user",
+        "password": "password",
+        "database_name": "mydb"
+    },
+    "logging": {
+        "enabled": true,
+        "log_level": "info",
+        "log_file": "/var/log/myapp.log"
+    }
+}

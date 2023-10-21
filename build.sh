@@ -13,14 +13,13 @@ fi
 mkdir -p out
 mkdir -p res
 
-
 cd out
-cp -r ../res res
+cp -r ../res res/
 
 for APP in "$@"; do
-    clang "../tests/$APP.c"\
-    -Werror \
-    -o "./$APP$EXT" \
-    $LIBRARIES
+    clang "../tests/$APP.c" \
+        -Werror \
+        -o "./$APP$EXT" \
+        $LIBRARIES
     ./$APP$EXT
 done

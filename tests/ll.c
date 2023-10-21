@@ -16,7 +16,8 @@ ll_lib(crt, libc, {
 });
 #endif
 
-int main(void) {
+int main(void)
+{
   test_group(ll, {
     test_true(ll_load_lib(crt));
     test_true(ll_load_func(crt, printf));

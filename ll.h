@@ -123,8 +123,8 @@ typedef void *(*ll_val_fptr)(void);
 #define ll_lib(LibName, LibTarget, SymBlock)                                   \
   typedef struct SymBlock _ll_lib(LibName);                                    \
   ll_lib_ptr _ll_handle(LibName) = 0;                                          \
-  const char *_ll_path(LibName) = LL_STR(LibTarget) LL_LIB_EXT;                \
-  _ll_lib(LibName) LibName = {0};
+  const char *_ll_path(LibName)  = LL_STR(LibTarget) LL_LIB_EXT;               \
+  _ll_lib(LibName) LibName       = {0};
 
 #define ll_val(VarName, TValue, ...) TValue *VarName
 #define ll_func(FuncName, TReturn, ...) TReturn (*FuncName)(__VA_ARGS__)
@@ -132,8 +132,8 @@ typedef void *(*ll_val_fptr)(void);
 extern void _ll_load_err(const char *symtype, const char *lib);
 extern int _ll_load_lib(ll_lib_ptr *handle, const char *lib, void *alt, ...);
 extern int _ll_has_func(ll_lib_ptr *handle, const char *func);
-extern int _ll_load_func(ll_lib_ptr *handle, const char *func, void **fptr,
-                         void **alt, ...);
+extern int _ll_load_func(
+  ll_lib_ptr *handle, const char *func, void **fptr, void **alt, ...);
 extern int _ll_close_lib(ll_lib_ptr *handle);
 
 #ifndef LL_STATIC
@@ -149,13 +149,15 @@ extern int _ll_close_lib(ll_lib_ptr *handle);
   _ll_load_lib(&_ll_handle(LibName), _ll_path(LibName), NULL)
 
 #define ll_load_func(LibName, FuncName)                                        \
-  _ll_load_func(&_ll_handle(LibName), LL_STR(FuncName),                        \
-                (void *)(&_ll_fptr(LibName, FuncName)),                        \
-                LL_EXCLUDE((void *)&(FuncName)))
+  _ll_load_func(&_ll_handle(LibName),                                          \
+                LL_STR(FuncName),                                              \
+                (void *) (&_ll_fptr(LibName, FuncName)),                       \
+                LL_EXCLUDE((void *) &(FuncName)))
 
 #define ll_load_var(LibName, VarName)                                          \
-  _ll_load_var(&_ll_handle(LibName), LL_STR(VarName),                          \
-               LL_EXCLUDE((void *)(&_ll_vptr(LibName, VarName))))
+  _ll_load_var(&_ll_handle(LibName),                                           \
+               LL_STR(VarName),                                                \
+               LL_EXCLUDE((void *) (&_ll_vptr(LibName, VarName))))
 
 #define ll_has_func(LibName, FuncName)                                         \
   _ll_has_func(&_ll_handle(LibName), LL_STR(FuncName))
@@ -175,26 +177,44 @@ extern int _ll_close_lib(ll_lib_ptr *handle);
 #define ll_load_func_impl GetProcAddress
 #define ll_close_lib_impl FreeLibrary
 
-void _ll_load_err(const char *symtype, const char *lib) {
-  DWORD err = GetLastError();
+void _ll_load_err(const char *symtype, const char *lib)
+{
+  DWORD err    = GetLastError();
   LPSTR errmsg = NULL;
-  if (err == 126) {
-    fprintf(stderr, "ERROR: Failed to open %s: %s not found (%lu)\n", symtype,
-            lib, err);
-  } else {
-    size_t elen = FormatMessageA(
-        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-            FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&errmsg, 0,
-        NULL);
-    if (elen == 0) {
-      fprintf(stderr, "ERROR: Failed to open %s %s: %s (%lu)\n", symtype, lib,
-              errmsg, err);
-    } else {
+  if (err == 126)
+  {
+    fprintf(stderr,
+            "ERROR: Failed to open %s: %s not found (%lu)\n",
+            symtype,
+            lib,
+            err);
+  }
+  else
+  {
+    size_t elen = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                                   FORMAT_MESSAGE_FROM_SYSTEM |
+                                   FORMAT_MESSAGE_IGNORE_INSERTS,
+                                 NULL,
+                                 err,
+                                 MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                                 (LPSTR) &errmsg,
+                                 0,
+                                 NULL);
+    if (elen == 0)
+    {
+      fprintf(stderr,
+              "ERROR: Failed to open %s %s: %s (%lu)\n",
+              symtype,
+              lib,
+              errmsg,
+              err);
+    }
+    else
+    {
       fprintf(stderr, "ERROR: Failed to open %s %s (%lu)\n", symtype, lib, err);
     }
   }
-  LocalFree((HLOCAL)errmsg);
+  LocalFree((HLOCAL) errmsg);
 }
 
 #else
@@ -202,17 +222,31 @@ void _ll_load_err(const char *symtype, const char *lib) {
 #define ll_load_func_impl dlsym
 #define ll_close_lib_impl dlclose
 
-void _ll_load_err(const char *symtype, const char *lib) {
+void _ll_load_err(const char *symtype, const char *lib)
+{
   int err = errno;
-  if (err == 126) {
-    fprintf(stderr, "ERROR: Failed to open %s %s: %s not found (%lu)\n",
-            symtype, lib, err);
-  } else {
+  if (err == 126)
+  {
+    fprintf(stderr,
+            "ERROR: Failed to open %s %s: %s not found (%lu)\n",
+            symtype,
+            lib,
+            err);
+  }
+  else
+  {
     const char *errmsg = dlerror(err);
-    if (errmsg != NULL) {
-      fprintf(stderr, "ERROR: Failed to open %s %s: %s (%d)\n", symtype, lib,
-              errmsg, err);
-    } else {
+    if (errmsg != NULL)
+    {
+      fprintf(stderr,
+              "ERROR: Failed to open %s %s: %s (%d)\n",
+              symtype,
+              lib,
+              errmsg,
+              err);
+    }
+    else
+    {
       fprintf(stderr, "ERROR: Failed to open %s %s (%d)\n", symtype, lib, err);
     }
   }
@@ -220,26 +254,32 @@ void _ll_load_err(const char *symtype, const char *lib) {
 
 #endif
 
-int _ll_load_lib(ll_lib_ptr *handle, const char *lib, void *alt, ...) {
+int _ll_load_lib(ll_lib_ptr *handle, const char *lib, void *alt, ...)
+{
   ll_lib_ptr result = ll_load_lib_impl(lib);
-  if (result) {
+  if (result)
+  {
     *handle = result;
     return 1;
   }
-  if (result == 0) {
+  if (result == 0)
+  {
     _ll_load_err("library", lib);
   }
   *handle = alt;
   return 0;
 }
 
-int _ll_has_func(ll_lib_ptr *handle, const char *func) {
+int _ll_has_func(ll_lib_ptr *handle, const char *func)
+{
   return ll_load_func_impl(*handle, func) != 0;
 }
 
-int _ll_load_var(ll_lib_ptr *handle, const char *var, void **vptr, ...) {
-  ll_val_fptr result = (ll_val_fptr)ll_load_func_impl(*handle, var);
-  if (result) {
+int _ll_load_var(ll_lib_ptr *handle, const char *var, void **vptr, ...)
+{
+  ll_val_fptr result = (ll_val_fptr) ll_load_func_impl(*handle, var);
+  if (result)
+  {
     *vptr = result();
     return 1;
   }
@@ -247,13 +287,16 @@ int _ll_load_var(ll_lib_ptr *handle, const char *var, void **vptr, ...) {
   return 0;
 }
 
-int _ll_load_func(ll_lib_ptr *handle, const char *func, void **fptr, void **alt,
-                  ...) {
+int _ll_load_func(
+  ll_lib_ptr *handle, const char *func, void **fptr, void **alt, ...)
+{
   ll_func_ptr result = ll_load_func_impl(*handle, func);
-  if (result) {
-    *fptr = (void *)result;
+  if (result)
+  {
+    *fptr = (void *) result;
   }
-  if (alt == 0) {
+  if (alt == 0)
+  {
     _ll_load_err("function", func);
     return 0;
   }
@@ -261,7 +304,8 @@ int _ll_load_func(ll_lib_ptr *handle, const char *func, void **fptr, void **alt,
   return 1;
 }
 
-int _ll_close_lib(ll_lib_ptr *handle) {
+int _ll_close_lib(ll_lib_ptr *handle)
+{
   return ll_close_lib_impl(*handle) != 0;
 }
 
