@@ -34,7 +34,7 @@ operations.
   - `udp_send()`: Sends data over a given UDP socket.
   - `udp_bind()`: Binds a given UDP socket for listening.
   - `udp_recv()`: Receives data from a given UDP socket.
-  - `udp_close()`: Receives data from a given UDP socket.
+  - `udp_close()`: Closes a UDP socket.
 
 ### Initialization & Cleanup
 
@@ -221,7 +221,7 @@ UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port)
   return sock;
 }
 
-booludp_close(UDPSOCK sock)
+bool udp_close(UDPSOCK sock)
 {
   if (!sock)
   {
