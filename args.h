@@ -7,30 +7,29 @@ Include `args.h` and you're set.
 
 ## API Documentation
 
-- `argdefaults()`: Sets up the default help message flag
-- `argvar(Name, Type, [Message], [Default])`: Sets up a variable for its value
+- `args_default()`: Sets up the default help message flag
+- `args_var(Name, Type, [Message], [Default])`: Sets up a variable for its value
 to be parsed into as an option. This will either be a single letter flag like
 -a, or a long flag like -asdf, --asdf
-- `argflag(Name, [Message], [Default])`: Sets up a bool variable to be parsed
+- `args_flag(Name, [Message], [Default])`: Sets up a bool variable to be parsed
 into. This kind of flag's value is set by providing the flag itself.
-- `argreqd(Name)`: Marks a flag in the arguments as required.
-- `argpop(Name, Type, [Message], [Default])`: Sets up a variable to be popped
-off after parsing the options. These are required.
-- `parseargs(Argc, Argv):` Parses out the arguments.
-- `popargs(Argc, Argv):` Pops off the trailing arguments after calling
-`parseargs`.
-- `argprinthelp(FILE *const)`: Prints the help message to the specified stream.
+- `args_reqd(Name)`: Marks a flag in the arguments as required.
+- `args_parse(Argc, Argv):` Parses out the arguments.
+- `args_pop(Name, Type, [Message], [Default])`: Pops an argument off after
+parsing the options. These are required.
+- `args_printhelp(FILE *const)`: Prints the help message to the specified
+stream.
 
 ## Notes
 
-- `parseargs` will detect the help flag being true and print the help message for
-you, if the name is "help", and it's a bool flag set to `true`.
+- `args_parse` will detect the help flag being true and print the help message
+for you, if the name is "help", and it's a bool flag set to `true`.
 - This supports -flag value and -flag=value syntax
 - Compound single-letter flags like -abc are supported as long as all of the
 single-letter flags exist. Else, the whole flag will be treated as invalid.
-- `argprinthelp` is based off of the existing values. If you call it before
-`argpop`, which can be called after `parseargs`, then it will not contain those
-arguments.
+- `args_printhelp` is based off of the existing values. If you call it before
+`args_pop`, which can be called after `args_parse`, then it will not contain
+those arguments.
 */
 #ifndef _ARGS_H
 #define _ARGS_H
@@ -193,7 +192,7 @@ static inline void argsetvar(void **var, argtype type, char *arg)
   }
 }
 
-static inline void argprinthelp(FILE *const stream)
+static inline void args_printhelp(FILE *const stream)
 {
   fprintf(stream, "usage: %s", __exename);
   for (int i = 0; i < __argscount; ++i)
@@ -269,10 +268,10 @@ static inline void argprinthelp(FILE *const stream)
   }
 }
 
-#define argdefaults() argflag(help, "Show this help message and quit", true)
+#define args_default() args_flag(help, "Show this help message and quit", true)
 
-#define argvar(...) _argvar(__VA_ARGS__, NULL, NULL)
-#define _argvar(VAR, TYPE, MESSAGE, DEFAULT, ...)                              \
+#define args_var(...) _args_var(__VA_ARGS__, NULL, NULL)
+#define _args_var(VAR, TYPE, MESSAGE, DEFAULT, ...)                            \
   const int __arg_##VAR##_i = __argscount;                                     \
   TYPE VAR;                                                                    \
   do                                                                           \
@@ -289,21 +288,21 @@ static inline void argprinthelp(FILE *const stream)
     __argscount++;                                                             \
   } while (0)
 
-#define argflag(VAR, ...)                                                      \
-  argvar(VAR, bool, __VA_ARGS__, NULL, NULL);                                  \
+#define args_flag(VAR, ...)                                                    \
+  args_var(VAR, bool, __VA_ARGS__, NULL, NULL);                                \
   do                                                                           \
   {                                                                            \
     __args[__arg_##VAR##_i].flag = true;                                       \
   } while (0)
 
-#define argreqd(VAR)                                                           \
+#define args_reqd(VAR)                                                         \
   do                                                                           \
   {                                                                            \
     __args[__arg_##VAR##_i].reqd = true;                                       \
   } while (0)
 
-#define argpop(...) _argpop(__VA_ARGS__, NULL, NULL)
-#define _argpop(VAR, TYPE, MESSAGE, DEFAULT, ...)                              \
+#define args_pop(...) _args_pop(__VA_ARGS__, NULL, NULL)
+#define _args_pop(VAR, TYPE, MESSAGE, DEFAULT, ...)                            \
   const int __arg_##VAR##_i = __argpcount;                                     \
   TYPE VAR;                                                                    \
   do                                                                           \
@@ -320,7 +319,7 @@ static inline void argprinthelp(FILE *const stream)
     __argpcount++;                                                             \
   } while (0)
 
-#define parseargs(ARGC, ARGV)                                                   \
+#define args_parse(ARGC, ARGV)                                                 \
   do                                                                           \
   {                                                                            \
     __argc                = ARGC;                                              \
@@ -356,17 +355,34 @@ static inline void argprinthelp(FILE *const stream)
           {                                                                    \
             argn += 1;                                                         \
           }                                                                    \
+          int argnn = strlen(argn);                                            \
           int namen = strlen(__args[j].name);                                  \
+          if (__args[j].flag && (argnn > namen && argn[namen] == '='))         \
+          {                                                                    \
+            fprintf(stderr,                                                    \
+                    "ERROR: Argument '%s' doesn't accept a value\n",           \
+                    __args[j].name);                                           \
+            args_printhelp(stderr);                                            \
+            exit(1);                                                           \
+          }                                                                    \
           if (strcmp(__args[j].name, argn) == 0)                               \
           {                                                                    \
             if (__args[j].flag)                                                \
             {                                                                  \
+              if ((i + 1 < __argc && ARGV[i + 1][0] != '-') ||                 \
+                  (argnn > namen && argn[namen] == '='))                       \
+              {                                                                \
+                fprintf(stderr,                                                \
+                        "ERROR: Argument '%s' doesn't accept a value\n",       \
+                        __args[j].name);                                       \
+                args_printhelp(stderr);                                        \
+                exit(1);                                                       \
+              }                                                                \
               argsetdef(__args[j].var, (void *) 1);                            \
               __argc -= 1;                                                     \
             }                                                                  \
             else                                                               \
             {                                                                  \
-              int argnn = strlen(argn);                                        \
               if (argnn > namen && argn[namen] == '=')                         \
               {                                                                \
                 argsetvar(__args[j].var, __args[j].type, &(argn)[namen + 1]);  \
@@ -402,7 +418,7 @@ static inline void argprinthelp(FILE *const stream)
             if (!isflag)                                                       \
             {                                                                  \
               fprintf(stderr, "ERROR: Unknown argument '%s'\n", argn);         \
-              argprinthelp(stderr);                                            \
+              args_printhelp(stderr);                                          \
               exit(1);                                                         \
             }                                                                  \
           }                                                                    \
@@ -416,7 +432,7 @@ static inline void argprinthelp(FILE *const stream)
           strcmp(__args[j].name, "help") == 0 &&                               \
           *((bool *) __args[j].var) == true)                                   \
       {                                                                        \
-        argprinthelp(stdout);                                                  \
+        args_printhelp(stdout);                                                \
         exit(0);                                                               \
       }                                                                        \
       if (!__args[j].used)                                                     \
@@ -426,7 +442,7 @@ static inline void argprinthelp(FILE *const stream)
           fprintf(stderr,                                                      \
                   "ERROR: Missing required argument '%s'\n",                   \
                   __args[j].name);                                             \
-          argprinthelp(stderr);                                                \
+          args_printhelp(stderr);                                              \
           exit(1);                                                             \
         }                                                                      \
         else                                                                   \
@@ -437,7 +453,7 @@ static inline void argprinthelp(FILE *const stream)
     }                                                                          \
   } while (0)
 
-#define popargs(ARGC, ARGV)                                                    \
+#define args_popend(ARGC, ARGV)                                                \
   do                                                                           \
   {                                                                            \
     if (__argc < __argpcount)                                                  \
@@ -445,7 +461,7 @@ static inline void argprinthelp(FILE *const stream)
       fprintf(stderr,                                                          \
               "ERROR: Missing required argument '%s'\n",                       \
               __argp[__argc].name);                                            \
-      argprinthelp(stderr);                                                    \
+      args_printhelp(stderr);                                                  \
       exit(1);                                                                 \
     }                                                                          \
     for (int j = 0; j < __argpcount; ++j)                                      \
