@@ -1,29 +1,11 @@
 #define STREAM_IMPLEMENTATION
 #include "../stream.h"
+#include "../test.h"
 
 int main(void) {
-  STREAM *s = NULL;
-  if (spushb(s, 14, "Hello, world!\0")) {
-    STREAMITER i = siter(s);
-    while (sihasnext(i)) {
-      printf("%c", sicurr(i));
-      sinext(i);
-    }
-    free(i);
-    STREAMRITER j = sriter(s);
-    while (srihasnext(j)) {
-      printf("%c", sricurr(j));
-      srinext(j);
-    }
-    free(j);
-    printf("\n");
-    sdeqb(s, 3);
-    printf("%d\n", (int)s->length);
-    sinsbz(s, 5, 4);
-    printf("%d\n", (int)s->length);
-    spopb(s, 7);
-    sclear(s);
-    printf("%d\n", (int)s->length);
-    sfree(s);
-  }
+  test_group(stream, {
+    STREAM *s = NULL;
+    test_true(spushb(s, strlen("Hello, world!"), "Hello, world!"));
+    test_expr(slength(s), int, strlen("Hello, world!"));
+  });
 }

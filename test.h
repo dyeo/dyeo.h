@@ -134,7 +134,7 @@
     fprintf(stdout, _Col(Hint));                                               \
     if ((Expr)) {                                                              \
       _test_h_indent(stdout);                                                  \
-      fprintf(stdout, _Lit(Pass) #Expr "\n");                                  \
+      fprintf(stdout, _Lit(Pass) #Expr "\n" _Col(Hint));                                  \
       _test_h_passes++;                                                        \
     } else {                                                                   \
       _test_h_indent(stderr);                                                  \
@@ -153,8 +153,8 @@
     if (_ExEq(TRes, _expr, _res)) {                                            \
       _test_h_indent(stdout);                                                  \
       fprintf(stdout,                                                          \
-              _Lit(Pass) #Expr _Col(Hint) " == " _PFmt(TRes)                   \
-                  _Col(0) "\n"_Col(Hint),                                      \
+              _Lit(Pass) #Expr _Col(Hint) " == " _PFmt(                        \
+                  TRes) _Col(0) "\n" _Col(Hint),                   \
               _PArg(TRes, _res));                                              \
       _test_h_passes++;                                                        \
     } else {                                                                   \

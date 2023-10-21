@@ -255,10 +255,10 @@ int _ll_load_func(ll_lib_ptr *handle, const char *func, void **fptr, void **alt,
   }
   if (alt == 0) {
     _ll_load_err("function", func);
-    return 1;
+    return 0;
   }
   *fptr = alt;
-  return 0;
+  return 1;
 }
 
 int _ll_close_lib(ll_lib_ptr *handle) {
