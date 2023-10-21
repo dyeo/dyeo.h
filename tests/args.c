@@ -4,8 +4,7 @@
 int main(int argc, char **argv)
 {
   argdefaults();
-  argvar(test, int, "Test message");
-  argreqd(test);
+  argflag(a, "TEST");
+  argflag(b, "TEST");
   argparse(argc, argv);
-  printf("%d", test);
 }

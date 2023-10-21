@@ -271,8 +271,12 @@ static inline void argprinthelp(FILE *const stream)
         char *argn = &(arg)[1];                                                \
         for (int j = 0; j < __argscount; ++j)                                  \
         {                                                                      \
+          if (!__args[j].sing && argn[0] == '-')                               \
+          {                                                                    \
+            argn += 1;                                                         \
+          }                                                                    \
           int namen = strlen(__args[j].name);                                  \
-          if (strncmp(__args[j].name, argn, namen) == 0)                       \
+          if (strcmp(__args[j].name, argn) == 0)                               \
           {                                                                    \
             if (__args[j].flag)                                                \
             {                                                                  \
@@ -297,9 +301,27 @@ static inline void argprinthelp(FILE *const stream)
         }                                                                      \
         if (!found)                                                            \
         {                                                                      \
-          fprintf(stderr, "ERROR: Unknown argument '%s'\n", argn);             \
-          argprinthelp(stderr);                                                \
-          exit(1);                                                             \
+          for (int i = 0; argn[i] != '\0'; ++i)                                \
+          {                                                                    \
+            bool isflag = false;                                               \
+            for (int j = 0; j < __argscount; ++j)                              \
+            {                                                                  \
+              if (__args[j].sing && __args[j].flag &&                          \
+                  argn[i] == __args[j].name[0])                                \
+              {                                                                \
+                __args[j].used = true;                                         \
+                argsetdef(__args[j].var, (void *) true);                       \
+                isflag = true;                                                 \
+                break;                                                         \
+              }                                                                \
+            }                                                                  \
+            if (!isflag)                                                       \
+            {                                                                  \
+              fprintf(stderr, "ERROR: Unknown argument '%s'\n", argn);         \
+              argprinthelp(stderr);                                            \
+              exit(1);                                                         \
+            }                                                                  \
+          }                                                                    \
         }                                                                      \
       }                                                                        \
     }                                                                          \
