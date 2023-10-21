@@ -674,7 +674,7 @@ _malloc char *_build_h_fileext(_malloc char *filepath)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-#define mkdir(...) cmdcallf("mkdir", "-p", path(__VA_ARGS__))
+#define mkdir(...) cmdcall("mkdir", "-p", path(__VA_ARGS__))
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -740,15 +740,15 @@ static inline _malloc char *cwd()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-typedef struct
+typedef struct COMMAND
 {
   char *cmd;
   char *args;
   size_t length;
   size_t capacity;
-} Cmd;
+} *COMMAND;
 
-static void _build_h_cmd_add_arg(Cmd *cmd, const char *arg)
+static void _build_h_cmd_add_arg(COMMAND cmd, const char *arg)
 {
   if (arg == NULL)
   {
@@ -785,7 +785,7 @@ static void _build_h_cmd_add_arg(Cmd *cmd, const char *arg)
   cmd->length = new_length - 1;
 }
 
-static inline void _build_h_cmdarg_va_list(Cmd *cmd, va_list args)
+static inline void _build_h_cmdarg_va_list(COMMAND cmd, va_list args)
 {
   const char *arg = NULL;
   while ((arg = va_arg(args, char *)) != NULL)
@@ -796,7 +796,7 @@ static inline void _build_h_cmdarg_va_list(Cmd *cmd, va_list args)
 
 // add N arguments to command
 #define cmdarg(CMDPTR, ...) _build_h_cmdarg(CMDPTR, __VA_ARGS__, NULL)
-static inline void _build_h_cmdarg(Cmd *cmd, ...)
+static inline void _build_h_cmdarg(COMMAND cmd, ...)
 {
   va_list args;
   va_start(args, cmd);
@@ -804,12 +804,15 @@ static inline void _build_h_cmdarg(Cmd *cmd, ...)
   va_end(args);
 }
 
+#define cmdflag(CMD, BOOLFLAG)                                                 \
+  ((BOOLFLAG) ? cmdarg(CMD, "-" #BOOLFLAG) : (void) (BOOLFLAG))
+
 // create new command with N arguments
 // free with cmdfree
 #define cmdnew(...) _build_h_cmdnew(__VA_ARGS__, NULL)
-static Cmd *_build_h_cmdnew(const char *command, ...)
+static COMMAND _build_h_cmdnew(const char *command, ...)
 {
-  Cmd *cmd = (Cmd *) malloc(sizeof(Cmd));
+  COMMAND cmd = (COMMAND ) malloc(sizeof(struct COMMAND));
   if (!cmd)
   {
     log_error("%s", "Failed to allocate memory for command");
@@ -837,7 +840,7 @@ static Cmd *_build_h_cmdnew(const char *command, ...)
 
 // get full command str
 // free with free
-static _malloc char *cmdstr(Cmd *cmd)
+static _malloc char *cmdstr(COMMAND cmd)
 {
   if (cmd == NULL)
   {
@@ -871,7 +874,7 @@ static _malloc char *cmdstr(Cmd *cmd)
 }
 
 // free a command
-static void cmdfree(Cmd *cmd)
+static void cmdfree(COMMAND cmd)
 {
   if (cmd == NULL)
   {
@@ -883,20 +886,20 @@ static void cmdfree(Cmd *cmd)
   free(cmd);
 }
 
-#define cmdcallf(...)                                                          \
+#define cmdcall(...)                                                           \
   do                                                                           \
   {                                                                            \
-    Cmd *__thisCmdPtr = cmdnew(__VA_ARGS__);                                   \
+    COMMAND __thisCmdPtr = cmdnew(__VA_ARGS__);                                   \
     if (__thisCmdPtr)                                                          \
     {                                                                          \
-      cmdcall(__thisCmdPtr);                                                   \
+      cmdcallf(__thisCmdPtr);                                                  \
       cmdfree(__thisCmdPtr);                                                   \
     }                                                                          \
   } while (0)
 
 // call the command
 // returns true on success, false on failure
-static bool cmdcall(Cmd *c)
+static bool cmdcallf(COMMAND c)
 {
 #if __WINDOWS__
   if (c == NULL)

@@ -1,25 +1,23 @@
 #include "../build.h"
 #include "../test.h"
 
-#define cflag(CMD, CFLAG) (CFLAG ? cmdarg(CMD, "-" #CFLAG) : (void) CFLAG)
-
 bool Wall   = true;
 bool Wextra = false;
 bool Werror = false;
 
-void cflags(Cmd *c)
+void cflags(COMMAND c)
 {
-  cflag(c, Wall);
-  cflag(c, Wextra);
-  cflag(c, Werror);
+  cmdflag(c, Wall);
+  cmdflag(c, Wextra);
+  cmdflag(c, Werror);
 }
 
-void source(Cmd *c)
+void source(COMMAND c)
 {
   cmdarg(c, path("../../tests", "build.c"));
 }
 
-void output(Cmd *c)
+void output(COMMAND c)
 {
   cmdarg(c, "-o", "./build.exe");
 }
@@ -28,14 +26,14 @@ int main(void)
 {
   test_group(build, {
     printf("%s\n", path("c", "Windows/system32", "drivers"));
-    Cmd *cc = cmdnew(__COMPILER__);
-    cmdcallf("echo", "Hello, world!");
+    COMMAND cc = cmdnew(__COMPILER__);
+    cmdcall("echo", "Hello, world!");
     mkdir("out");
     cd("out");
     cflags(cc);
     source(cc);
     output(cc);
-    bool status = cmdcall(cc);
+    bool status = cmdcallf(cc);
     cmdfree(cc);
     test_expr(status, bool, true);
   });
