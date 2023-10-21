@@ -191,7 +191,7 @@ UDPSOCK udp_open(const char *ip, unsigned short port)
 
 UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port)
 {
-  if (!sock)
+  if (sock == NULL)
   {
     sock = udp_open(ip, port);
   }
@@ -204,12 +204,14 @@ UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port)
   if (inet_pton(AF_INET, ip, &addr.sin_addr) != 1)
   {
     fprintf(stderr, "ERROR: Could not resolve address");
+    free(sock);
     return NULL;
   }
 
   if (bind(sock->handle, (struct sockaddr *) &addr, sizeof(addr)) == UDP_ERROR)
   {
     fprintf(stderr, "ERROR: Could not bind socket");
+    free(sock);
     return NULL;
   }
 
