@@ -155,10 +155,45 @@ static inline void argsetvar(void **var, argtype type, char *arg)
 
 static inline void argprinthelp(FILE *const stream)
 {
-  fprintf(stream, "usage: %s [option] ...\n", __exename);
+  fprintf(stream, "usage: %s", __exename);
+  for (int i = 0; i < __argscount; ++i)
+  {
+    if (!__args[i].reqd)
+    {
+      continue;
+    }
+    fprintf(stream, " -%s", __args[i].name);
+    if (!__args[i].flag)
+    {
+      fprintf(stream, " (%s)", argtypenames[__args[i].type]);
+    }
+  }
+  fprintf(stream, " [options] ...\n");
+  fprintf(stream, "  required:\n");
+  for (int i = 0; i < __argscount; ++i)
+  {
+    if (!__args[i].reqd)
+    {
+      continue;
+    }
+    fprintf(stream, "    -%s", __args[i].name);
+    if (!__args[i].flag)
+    {
+      fprintf(stream, " (%s)", argtypenames[__args[i].type]);
+    }
+    if (__args[i].mesg)
+    {
+      fprintf(stream, ": %s", __args[i].mesg);
+    }
+    fprintf(stream, "\n");
+  }
   fprintf(stream, "  options:\n");
   for (int i = 0; i < __argscount; ++i)
   {
+    if (__args[i].reqd)
+    {
+      continue;
+    }
     fprintf(stream, "    -%s", __args[i].name);
     if (!__args[i].flag)
     {
