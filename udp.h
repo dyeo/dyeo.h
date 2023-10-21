@@ -153,6 +153,7 @@ bool udp_init()
     return WSAStartup(MAKEWORD(2, 2), _udp_handle) == 0;
 #else
     _udp_handle = (UDPDATA *) malloc(sizeof(UDPDATA));
+    return true;
 #endif
   }
   return false;
