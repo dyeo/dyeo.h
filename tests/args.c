@@ -8,7 +8,7 @@ int main(int argc, char **argv)
   argflag(b, "A less cool flag named b");
   argflag(something, "A named flag");
   argvar(something2, int, "A named int val");
-  argparse(argc, argv);
+  parseargs(argc, argv);
   argpop(test, int, "This should be first popped off");
   argpop(test2, int, "This won't be popped off and will fail");
   if (false)

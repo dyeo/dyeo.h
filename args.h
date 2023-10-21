@@ -16,20 +16,20 @@ into. This kind of flag's value is set by providing the flag itself.
 - `argreqd(Name)`: Marks a flag in the arguments as required.
 - `argpop(Name, Type, [Message], [Default])`: Sets up a variable to be popped
 off after parsing the options. These are required.
-- `argparse(Argc, Argv):` Parses out the arguments.
+- `parseargs(Argc, Argv):` Parses out the arguments.
 - `popargs(Argc, Argv):` Pops off the trailing arguments after calling
-`argparse`.
+`parseargs`.
 - `argprinthelp(FILE *const)`: Prints the help message to the specified stream.
 
 ## Notes
 
-- `argparse` will detect the help flag being true and print the help message for
+- `parseargs` will detect the help flag being true and print the help message for
 you, if the name is "help", and it's a bool flag set to `true`.
 - This supports -flag value and -flag=value syntax
 - Compound single-letter flags like -abc are supported as long as all of the
 single-letter flags exist. Else, the whole flag will be treated as invalid.
 - `argprinthelp` is based off of the existing values. If you call it before
-`argpop`, which can be called after `argparse`, then it will not contain those
+`argpop`, which can be called after `parseargs`, then it will not contain those
 arguments.
 */
 #ifndef _ARGS_H
@@ -320,7 +320,7 @@ static inline void argprinthelp(FILE *const stream)
     __argpcount++;                                                             \
   } while (0)
 
-#define argparse(ARGC, ARGV)                                                   \
+#define parseargs(ARGC, ARGV)                                                   \
   do                                                                           \
   {                                                                            \
     __argc                = ARGC;                                              \
