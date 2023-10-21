@@ -19,12 +19,18 @@ off after parsing the options. These are required.
 - `argparse(Argc, Argv):` Parses out the arguments.
 - `popargs(Argc, Argv):` Pops off the trailing arguments after calling
 `argparse`.
+- `argprinthelp(FILE *const)`: Prints the help message to the specified stream.
 
 ## Notes
 
+- `argparse` will detect the help flag being true and print the help message for
+you, if the name is "help", and it's a bool flag set to `true`.
 - This supports -flag value and -flag=value syntax
 - Compound single-letter flags like -abc are supported as long as all of the
 single-letter flags exist. Else, the whole flag will be treated as invalid.
+- `argprinthelp` is based off of the existing values. If you call it before
+`argpop`, which can be called after `argparse`, then it will not contain those
+arguments.
 */
 #ifndef _ARGS_H
 #define _ARGS_H
@@ -406,7 +412,8 @@ static inline void argprinthelp(FILE *const stream)
     }                                                                          \
     for (int j = 0; j < __argscount; ++j)                                      \
     {                                                                          \
-      if (__args[j].type == boolarg && strcmp(__args[j].name, "help") == 0 &&  \
+      if (__args[j].flag && __args[j].type == boolarg &&                       \
+          strcmp(__args[j].name, "help") == 0 &&                               \
           *((bool *) __args[j].var) == true)                                   \
       {                                                                        \
         argprinthelp(stdout);                                                  \
