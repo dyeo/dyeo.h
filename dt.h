@@ -592,8 +592,10 @@ extern char *sprintfx(const char *format, ...);
 extern size_t strnchrn(const char *string, const char c, const size_t n);
 extern char *strrchre(const char *string, const char c, const char *end);
 
+extern dt_node *dt_loadf(const char *filepath);
 extern dt_node *dt_loads(const char *string);
 extern dt_node *dt_loads_impl(const char *string, size_t *offset);
+extern bool dt_dumpf(const dt_node *node, const char *filepath);
 extern char *dt_dumps(const dt_node *node);
 extern char *dt_dumps_ex(const dt_node *node, const dt_dumps_settings_t *set);
 
@@ -1892,6 +1894,36 @@ extern size_t memlen(const void *buffer, const size_t elem_len)
 
 // -----------------------------------------------------------------------------
 
+dt_node *dt_loadf(const char *filepath)
+{
+  FILE *file = fopen(filepath, "rb");
+  if (file == NULL)
+  {
+    fprintf(stderr, "ERROR: Could not read file '%s'\n", filepath);
+    return NULL;
+  }
+  fseek(file, 0, SEEK_END);
+  size_t len = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  uint8_t *data = (uint8_t *) malloc(len);
+  if (data == NULL)
+  {
+    fclose(file);
+    return NULL;
+  }
+  size_t bytesRead = fread(data, 1, len, file);
+  if (bytesRead != len)
+  {
+    fprintf(stderr, "ERROR: Could not read entire file '%s'\n", filepath);
+    free(data);
+    fclose(file);
+    return NULL;
+  }
+  dt_node *node = dt_loads((char *) data);
+  fclose(file);
+  return node;
+}
+
 dt_node *dt_loads(const char *string)
 {
   size_t offset = 0;
@@ -1949,6 +1981,21 @@ char *(*_dt_dumps_ptrs[dt_type_count])(const dt_node *,
   DT_TYPES_LIST
 #undef X
 };
+
+bool dt_dumpf(const dt_node *node, const char *filepath)
+{
+  FILE *file = fopen(filepath, "wb");
+  if (file == NULL)
+  {
+    fprintf(stderr, "ERROR: Could not write to file '%s'\n", filepath);
+    return false;
+  }
+  char *data = dt_dumps(node);
+  size_t len    = strlen(data);
+  fwrite(data, sizeof(char), len, file);
+  fclose(file);
+  return true;
+}
 
 char *dt_dumps(const dt_node *node)
 {
