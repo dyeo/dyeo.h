@@ -1991,6 +1991,11 @@ bool dt_dumpf(const dt_node *node, const char *filepath)
     return false;
   }
   char *data = dt_dumps(node);
+  if (data == NULL)
+  {
+    fprintf(stderr, "ERROR: Could not dump node data\n", filepath);
+    return false;
+  }
   size_t len    = strlen(data);
   fwrite(data, sizeof(char), len, file);
   fclose(file);
