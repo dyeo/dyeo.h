@@ -16,10 +16,17 @@ mkdir -p res
 cd out
 cp -r ../res res/
 
+declare -A TEST_ARGS
+TEST_ARGS["args"]="-help"
+
 for APP in "$@"; do
     clang "../tests/$APP.c" \
         -Werror \
         -o "./$APP$EXT" \
         $LIBRARIES
-    ./$APP$EXT
+    if [[ -n "${TEST_ARGS[$APP]}" ]]; then
+        ./"$APP$EXT" ${TEST_ARGS[$APP]}
+    else
+        ./"$APP$EXT"
+    fi
 done
