@@ -32,7 +32,9 @@ operations.
   - `udp_cleanup()`: Cleans up any initialized data or libraries.
   - `udp_open()`: Opens and initializes a UDP socket.
   - `udp_send()`: Sends data over a given UDP socket.
+  - `udp_bind()`: Binds a given UDP socket for listening.
   - `udp_recv()`: Receives data from a given UDP socket.
+  - `udp_close()`: Receives data from a given UDP socket.
 
 ### Initialization & Cleanup
 
@@ -99,6 +101,7 @@ extern UDPSOCK udp_open(const char *ip, unsigned short port);
 #define udp_bind(sock, ip, port) ((sock) = udp_bindf(sock, ip, port))
 extern bool udp_send(UDPSOCK sock, const BYTE *data, const size_t length);
 extern bool udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength);
+extern bool udp_close(UDPSOCK sock);
 
 extern UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port);
 
@@ -218,13 +221,16 @@ UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port)
   return sock;
 }
 
-void udp_close(UDPSOCK sock)
+booludp_close(UDPSOCK sock)
 {
   if (!sock)
-    return;
+  {
+    return false;
+  }
   closesocket(sock->handle);
   free((char *) sock->ip);
   free(sock);
+  return true;
 }
 
 bool udp_send(UDPSOCK sock, const BYTE *data, const size_t length)
