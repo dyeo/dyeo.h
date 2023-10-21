@@ -256,16 +256,16 @@ bool udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength)
                                &senderLen);
   if (bytesReceived <= 0)
   {
-    return 0;
+    return false;
   }
   BYTE *newData = (BYTE *) realloc(*outData, bytesReceived);
   if (!newData)
   {
     fprintf(stderr, "ERROR: Memory allocation failure");
-    return 0;
+    return false;
   }
   *outData = newData;
-  return 1;
+  return true;
 }
 
 #endif
