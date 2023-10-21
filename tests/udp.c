@@ -3,7 +3,7 @@
 int main()
 {
   udp_init();
-  UDPSOCK *s = udp_open("127.0.0.1", 12345);
+  UDPSOCK s = udp_open("127.0.0.1", 12345);
   if (s)
   {
     udp_send(s, (BYTE *) "Hello, world!", 14);

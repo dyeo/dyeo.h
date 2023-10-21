@@ -76,7 +76,7 @@ extern "C" {
 #define UDP_BUFFER_LENGTH 1024
 #endif
 
-typedef struct
+typedef struct UDPSOCK
 {
   const char *ip;
   unsigned short port;
@@ -85,7 +85,7 @@ typedef struct
 #else
   int handle;
 #endif
-} UDPSOCK;
+} *UDPSOCK;
 
 #ifndef BYTE
 #define BYTE unsigned char
@@ -93,9 +93,12 @@ typedef struct
 
 extern int udp_init();
 extern int udp_cleanup();
-extern UDPSOCK *udp_open(const char *ip, unsigned short port);
-extern int udp_send(UDPSOCK *sock, const BYTE *data, const size_t length);
-extern int udp_recv(UDPSOCK *sock, BYTE **outData, size_t *outLength);
+extern UDPSOCK udp_open(const char *ip, unsigned short port);
+#define udp_bind(sock, ip, port) ((sock) = udp_bindf(sock, ip, port))
+extern int udp_send(UDPSOCK sock, const BYTE *data, const size_t length);
+extern int udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength);
+
+extern UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port);
 
 #ifdef __cplusplus
 }
@@ -167,9 +170,9 @@ int udp_cleanup()
   return 0;
 }
 
-UDPSOCK *udp_open(const char *ip, unsigned short port)
+UDPSOCK udp_open(const char *ip, unsigned short port)
 {
-  UDPSOCK *sock = (UDPSOCK *) malloc(sizeof(UDPSOCK));
+  UDPSOCK sock = (UDPSOCK) malloc(sizeof(UDPSOCK));
   if (!sock)
   {
     fprintf(stderr, "ERROR: Memory allocation failure UDPSOCK");
@@ -186,7 +189,34 @@ UDPSOCK *udp_open(const char *ip, unsigned short port)
   return sock;
 }
 
-void udp_close(UDPSOCK *sock)
+UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port)
+{
+  if (!sock)
+  {
+    sock = udp_open(ip, port);
+  }
+  struct sockaddr_in addr;
+
+  memset(&addr, 0, sizeof(addr));
+  addr.sin_family = AF_INET;
+  addr.sin_port   = htons(port);
+
+  if (inet_pton(AF_INET, ip, &addr.sin_addr) != 1)
+  {
+    fprintf(stderr, "ERROR: Could not resolve address");
+    return NULL;
+  }
+
+  if (bind(sock->handle, (struct sockaddr *) &addr, sizeof(addr)) == UDP_ERROR)
+  {
+    fprintf(stderr, "ERROR: Could not bind socket");
+    return NULL;
+  }
+
+  return sock;
+}
+
+void udp_close(UDPSOCK sock)
 {
   if (!sock)
     return;
@@ -195,7 +225,7 @@ void udp_close(UDPSOCK *sock)
   free(sock);
 }
 
-int udp_send(UDPSOCK *sock, const BYTE *data, const size_t length)
+int udp_send(UDPSOCK sock, const BYTE *data, const size_t length)
 {
   struct sockaddr_in dest;
   if (inet_pton(AF_INET, sock->ip, &(dest.sin_addr)) != 1)
@@ -212,7 +242,7 @@ int udp_send(UDPSOCK *sock, const BYTE *data, const size_t length)
   return result != UDP_ERROR;
 }
 
-int udp_recv(UDPSOCK *sock, BYTE **outData, size_t *outLength)
+int udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength)
 {
   struct sockaddr_in sender;
   int senderLen = sizeof(sender);
