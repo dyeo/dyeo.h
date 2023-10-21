@@ -11,16 +11,16 @@ else
 fi
 
 mkdir -p out
+mkdir -p res
 
-for APP in "$@"; do
-clang "./tests/$APP.c"\
-    -Werror \
-    -o "./out/$APP$EXT" \
-    $LIBRARIES
-done
 
 cd out
+cp -r ../res res
 
 for APP in "$@"; do
-./$APP$EXT
+    clang "../tests/$APP.c"\
+    -Werror \
+    -o "./$APP$EXT" \
+    $LIBRARIES
+    ./$APP$EXT
 done

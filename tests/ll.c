@@ -2,7 +2,6 @@
 #define LL_IMPLEMENTATION
 #include "../ll.h"
 #include "../test.h"
-#include <stdio.h>
 
 #ifdef _WIN32
 ll_lib(crt, msvcrt, {

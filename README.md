@@ -1,0 +1,9 @@
+# dyeo.h - single header c libraries
+
+[cor.h](cor.h) - coroutines
+[gm.h](gm.h) - vector/matrix/quaternion math
+[ll.h](ll.h) - cross-platform library loading
+[stream.h](stream.h) - byte streams
+[test.h](test.h) - unit testing
+[udp.h](udp.h) - cross-platform udp networking
+[wav.h](wav.h) - .wav file encoding and decoding
