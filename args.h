@@ -355,22 +355,15 @@ static inline void args_printhelp(FILE *const stream)
           {                                                                    \
             argn += 1;                                                         \
           }                                                                    \
-          int argnn = strlen(argn);                                            \
-          int namen = strlen(__args[j].name);                                  \
-          if (__args[j].flag && (argnn > namen && argn[namen] == '='))         \
-          {                                                                    \
-            fprintf(stderr,                                                    \
-                    "ERROR: Argument '%s' doesn't accept a value\n",           \
-                    __args[j].name);                                           \
-            args_printhelp(stderr);                                            \
-            exit(1);                                                           \
-          }                                                                    \
+          int argnn   = strlen(argn);                                          \
+          int namen   = strlen(__args[j].name);                                \
+          char *eqpos = strchr(argn, '=');                                     \
+          bool vnext  = (i + 1 < __argc && ARGV[i + 1][0] != '-');             \
           if (strcmp(__args[j].name, argn) == 0)                               \
           {                                                                    \
             if (__args[j].flag)                                                \
             {                                                                  \
-              if ((i + 1 < __argc && ARGV[i + 1][0] != '-') ||                 \
-                  (argnn > namen && argn[namen] == '='))                       \
+              if (vnext || eqpos != NULL)                                      \
               {                                                                \
                 fprintf(stderr,                                                \
                         "ERROR: Argument '%s' doesn't accept a value\n",       \
@@ -383,7 +376,7 @@ static inline void args_printhelp(FILE *const stream)
             }                                                                  \
             else                                                               \
             {                                                                  \
-              if (argnn > namen && argn[namen] == '=')                         \
+              if (eqpos != NULL)                                               \
               {                                                                \
                 argsetvar(__args[j].var, __args[j].type, &(argn)[namen + 1]);  \
                 __argc -= 1;                                                   \
