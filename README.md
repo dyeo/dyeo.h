@@ -1,5 +1,6 @@
 # dyeo.h - single header c libraries
 
+- [args.h](args.h) - argparse-style argument parser
 - [cor.h](cor.h) - coroutines
 - [dt.h](dt.h) - datatag serializer/deserializer (superset of JSON)
 - [gm.h](gm.h) - vector/matrix/quaternion math
