@@ -1162,7 +1162,7 @@ void _wav_play_pcm(uint16_t format,
   }
   snd_pcm_hw_params_alloca(&params);
   snd_pcm_hw_params_any(_wav_linux_pcm_handle, params);
-  if (isFloat)
+  if (format == wav_float)
   {
     snd_pcm_hw_params_set_format(
       _wav_linux_pcm_handle, params, SND_PCM_FORMAT_FLOAT_LE);
