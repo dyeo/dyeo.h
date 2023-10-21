@@ -106,9 +106,13 @@ extern "C" {
 
 #if defined(_WIN32) || defined(_WIN64)
 #define WAV_WIN32 1
+#ifndef WIN32_MEAN_AND_LEAN
 #define WIN32_MEAN_AND_LEAN
+#endif
+#ifndef NOGDI
 #define NOGDI
-#if !defined(_CRT_SECURE_NO_WARNINGS)
+#endif
+#ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 #include <windows.h>
@@ -270,7 +274,8 @@ wav_audio *wav_gen_float32(uint32_t channels, uint32_t sampleRate,
 #endif
 
 #ifdef WAV_IMPLEMENTATION
-#define WAV_IMPLEMENTATION
+#ifndef _WAV_C
+#define _WAV_C
 
 // -----------------------------------------------------------------------------
 
@@ -1108,6 +1113,7 @@ void wav_free(wav_audio *wav) {
 
 // -----------------------------------------------------------------------------
 
+#endif
 #endif
 /*
 This software is served under two licenses - pick which you prefer.
