@@ -17,7 +17,7 @@ cd out
 cp -r ../res res/
 
 declare -A TEST_ARGS
-TEST_ARGS["args"]="-help"
+TEST_ARGS["args"]="-test=1"
 
 for APP in "$@"; do
     clang "../tests/$APP.c" \

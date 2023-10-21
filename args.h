@@ -78,6 +78,7 @@ static struct
   bool used;        // argument accessed
   bool flag;        // argument is flag
   bool reqd;        // argument is required
+  bool sing;        // single-letter
 } __args[ARGS_MAX_ARGC];
 char *__exename; // executable name
 int __argscount;
@@ -223,6 +224,7 @@ static inline void argprinthelp(FILE *const stream)
     __args[__argscount].used = false;                                          \
     __args[__argscount].flag = false;                                          \
     __args[__argscount].reqd = false;                                          \
+    __args[__argscount].sing = strlen(#VAR) == 1;                              \
     __argscount++;                                                             \
   } while (0)
 
@@ -269,7 +271,8 @@ static inline void argprinthelp(FILE *const stream)
         char *argn = &(arg)[1];                                                \
         for (int j = 0; j < __argscount; ++j)                                  \
         {                                                                      \
-          if (strcmp(__args[j].name, argn) == 0)                               \
+          int namen = strlen(__args[j].name);                                  \
+          if (strncmp(__args[j].name, argn, namen) == 0)                       \
           {                                                                    \
             if (__args[j].flag)                                                \
             {                                                                  \
@@ -277,7 +280,15 @@ static inline void argprinthelp(FILE *const stream)
             }                                                                  \
             else                                                               \
             {                                                                  \
-              argsetvar(__args[j].var, __args[j].type, ARGV[++i]);             \
+              int argnn = strlen(argn);                                        \
+              if (argnn > namen && argn[namen] == '=')                         \
+              {                                                                \
+                argsetvar(__args[j].var, __args[j].type, &(argn)[namen + 1]);  \
+              }                                                                \
+              else                                                             \
+              {                                                                \
+                argsetvar(__args[j].var, __args[j].type, ARGV[++i]);           \
+              }                                                                \
             }                                                                  \
             __args[j].used = true;                                             \
             found          = true;                                             \
