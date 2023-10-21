@@ -68,7 +68,7 @@ const char *argtypenames[] = {
 #undef X
 };
 
-static struct
+typedef struct TYPEARG
 {
   const char *name; // argument flags/name
   argtype type;     // argument messages
@@ -79,9 +79,14 @@ static struct
   bool flag;        // argument is flag
   bool reqd;        // argument is required
   bool sing;        // single-letter
-} __args[ARGS_MAX_ARGC];
+} TYPEARG;
+
 char *__exename; // executable name
+static TYPEARG __args[ARGS_MAX_ARGC];
 int __argscount;
+static TYPEARG __argp[ARGS_MAX_ARGC];
+int __argpcount;
+int __argc;
 
 static inline bool arggetboolarg(char *arg)
 {
@@ -94,9 +99,9 @@ static inline bool arggetboolarg(char *arg)
     arg[i] = tolower((unsigned char) arg[i]);
   }
   return strcmp(arg, "yes") == 0 || strcmp(arg, "true") == 0 ||
-         strcmp(arg, "okay") == 0 || strncmp(arg, "ok", 2) == 0 ||
-         strncmp(arg, "y", 1) == 0 || strncmp(arg, "t", 1) == 0 ||
-         strncmp(arg, "1", 1) == 0;
+         strcmp(arg, "okay") == 0 || strcmp(arg, "ok") == 0 ||
+         strcmp(arg, "y") == 0 || strcmp(arg, "t") == 0 ||
+         strcmp(arg, "1") == 0;
 }
 
 static inline char arggetchararg(char *arg)
@@ -169,7 +174,12 @@ static inline void argprinthelp(FILE *const stream)
       fprintf(stream, " (%s)", argtypenames[__args[i].type]);
     }
   }
-  fprintf(stream, " [options] ...\n");
+  fprintf(stream, " [options]");
+  for (int i = 0; i < __argpcount; ++i)
+  {
+    fprintf(stream, " %s", __argp[i].name);
+  }
+  fprintf(stream, " ...\n");
   fprintf(stream, "  required:\n");
   for (int i = 0; i < __argscount; ++i)
   {
@@ -185,6 +195,23 @@ static inline void argprinthelp(FILE *const stream)
     if (__args[i].mesg)
     {
       fprintf(stream, ": %s", __args[i].mesg);
+    }
+    fprintf(stream, "\n");
+  }
+  for (int i = 0; i < __argpcount; ++i)
+  {
+    if (!__argp[i].reqd)
+    {
+      continue;
+    }
+    fprintf(stream, "    -%s", __argp[i].name);
+    if (!__argp[i].flag)
+    {
+      fprintf(stream, " (%s)", argtypenames[__argp[i].type]);
+    }
+    if (__argp[i].mesg)
+    {
+      fprintf(stream, ": %s", __argp[i].mesg);
     }
     fprintf(stream, "\n");
   }
@@ -216,16 +243,34 @@ static inline void argprinthelp(FILE *const stream)
   TYPE VAR;                                                                    \
   do                                                                           \
   {                                                                            \
-    __args[__argscount].name = #VAR;                                           \
-    __args[__argscount].type = TYPE##arg;                                      \
-    __args[__argscount].mesg = MESSAGE;                                        \
-    __args[__argscount].var  = (void *) &(VAR);                                \
-    __args[__argscount].def  = (void *) DEFAULT;                               \
-    __args[__argscount].used = false;                                          \
-    __args[__argscount].flag = false;                                          \
-    __args[__argscount].reqd = false;                                          \
-    __args[__argscount].sing = strlen(#VAR) == 1;                              \
+    __args[__arg_##VAR##_i].name = #VAR;                                       \
+    __args[__arg_##VAR##_i].type = TYPE##arg;                                  \
+    __args[__arg_##VAR##_i].mesg = MESSAGE;                                    \
+    __args[__arg_##VAR##_i].var  = (void *) &(VAR);                            \
+    __args[__arg_##VAR##_i].def  = (void *) DEFAULT;                           \
+    __args[__arg_##VAR##_i].used = false;                                      \
+    __args[__arg_##VAR##_i].flag = false;                                      \
+    __args[__arg_##VAR##_i].reqd = false;                                      \
+    __args[__arg_##VAR##_i].sing = strlen(#VAR) == 1;                          \
     __argscount++;                                                             \
+  } while (0)
+
+#define poparg(...) _poparg(__VA_ARGS__, NULL, NULL)
+#define _poparg(VAR, TYPE, MESSAGE, DEFAULT, ...)                              \
+  const int __arg_##VAR##_i = __argpcount;                                     \
+  TYPE VAR;                                                                    \
+  do                                                                           \
+  {                                                                            \
+    __argp[__arg_##VAR##_i].name = #VAR;                                       \
+    __argp[__arg_##VAR##_i].type = TYPE##arg;                                  \
+    __argp[__arg_##VAR##_i].mesg = MESSAGE;                                    \
+    __argp[__arg_##VAR##_i].var  = (void *) &(VAR);                            \
+    __argp[__arg_##VAR##_i].def  = (void *) DEFAULT;                           \
+    __argp[__arg_##VAR##_i].used = false;                                      \
+    __argp[__arg_##VAR##_i].flag = false;                                      \
+    __argp[__arg_##VAR##_i].reqd = true;                                       \
+    __argp[__arg_##VAR##_i].sing = strlen(#VAR) == 1;                          \
+    __argpcount++;                                                             \
   } while (0)
 
 #define argflag(VAR, ...)                                                      \
@@ -244,6 +289,7 @@ static inline void argprinthelp(FILE *const stream)
 #define argparse(ARGC, ARGV)                                                   \
   do                                                                           \
   {                                                                            \
+    __argc                = ARGC;                                              \
     const char *appnstart = strrchr(ARGV[0], ARG_PATHSEP);                     \
     if (appnstart)                                                             \
     {                                                                          \
@@ -262,6 +308,7 @@ static inline void argprinthelp(FILE *const stream)
     __exename  = (char *) malloc(len + 1);                                     \
     strncpy(__exename, appnstart, len);                                        \
     __exename[len] = '\0';                                                     \
+    __argc -= 1;                                                               \
     for (int i = 1; i < ARGC; ++i)                                             \
     {                                                                          \
       char *arg = ARGV[i];                                                     \
@@ -281,6 +328,7 @@ static inline void argprinthelp(FILE *const stream)
             if (__args[j].flag)                                                \
             {                                                                  \
               argsetdef(__args[j].var, (void *) 1);                            \
+              __argc -= 1;                                                     \
             }                                                                  \
             else                                                               \
             {                                                                  \
@@ -288,10 +336,12 @@ static inline void argprinthelp(FILE *const stream)
               if (argnn > namen && argn[namen] == '=')                         \
               {                                                                \
                 argsetvar(__args[j].var, __args[j].type, &(argn)[namen + 1]);  \
+                __argc -= 1;                                                   \
               }                                                                \
               else                                                             \
               {                                                                \
                 argsetvar(__args[j].var, __args[j].type, ARGV[++i]);           \
+                __argc -= 2;                                                   \
               }                                                                \
             }                                                                  \
             __args[j].used = true;                                             \
@@ -322,6 +372,7 @@ static inline void argprinthelp(FILE *const stream)
               exit(1);                                                         \
             }                                                                  \
           }                                                                    \
+          __argc -= 1;                                                         \
         }                                                                      \
       }                                                                        \
     }                                                                          \
@@ -348,6 +399,22 @@ static inline void argprinthelp(FILE *const stream)
           argsetdef(__args[j].var, __args[j].def);                             \
         }                                                                      \
       }                                                                        \
+    }                                                                          \
+  } while (0)
+
+#define argpopend(ARGC, ARGV)                                                  \
+  do                                                                           \
+  {                                                                            \
+    if (__argc < __argpcount)                                                  \
+    {                                                                          \
+      fprintf(stderr,                                                          \
+              "ERROR: Missing required argument '%s'\n",                       \
+              __argp[__argc].name);                                            \
+      argprinthelp(stderr);                                                    \
+      exit(1);                                                                 \
+    }                                                                          \
+    for (int j = 0; j < __argpcount; ++j)                                      \
+    {                                                                          \
     }                                                                          \
   } while (0)
 
