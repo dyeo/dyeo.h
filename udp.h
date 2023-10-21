@@ -68,6 +68,8 @@ function than the older `inet_addr()`.
 extern "C" {
 #endif
 
+#include <stdbool.h>
+
 #if defined(_WIN32) || defined(_WIN64)
 #include <winsock2.h>
 #endif
@@ -91,12 +93,12 @@ typedef struct UDPSOCK
 #define BYTE unsigned char
 #endif
 
-extern int udp_init();
-extern int udp_cleanup();
+extern bool udp_init();
+extern bool udp_cleanup();
 extern UDPSOCK udp_open(const char *ip, unsigned short port);
 #define udp_bind(sock, ip, port) ((sock) = udp_bindf(sock, ip, port))
-extern int udp_send(UDPSOCK sock, const BYTE *data, const size_t length);
-extern int udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength);
+extern bool udp_send(UDPSOCK sock, const BYTE *data, const size_t length);
+extern bool udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength);
 
 extern UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port);
 
@@ -142,7 +144,7 @@ static UDPDATA *_udp_handle;
 #include <stdio.h>
 #include <string.h>
 
-int udp_init()
+bool udp_init()
 {
   if (_udp_handle == NULL)
   {
@@ -153,21 +155,21 @@ int udp_init()
     _udp_handle = (UDPDATA *) malloc(sizeof(UDPDATA));
 #endif
   }
-  return 0;
+  return false;
 }
 
-int udp_cleanup()
+bool udp_cleanup()
 {
   if (_udp_handle != NULL)
   {
-    int result = 1;
+    bool result = true;
 #ifdef _WIN32
     result = WSACleanup() == 0;
 #endif
     free(_udp_handle);
     return result;
   }
-  return 0;
+  return false;
 }
 
 UDPSOCK udp_open(const char *ip, unsigned short port)
@@ -224,13 +226,13 @@ void udp_close(UDPSOCK sock)
   free(sock);
 }
 
-int udp_send(UDPSOCK sock, const BYTE *data, const size_t length)
+bool udp_send(UDPSOCK sock, const BYTE *data, const size_t length)
 {
   struct sockaddr_in dest;
   if (inet_pton(AF_INET, sock->ip, &(dest.sin_addr)) != 1)
   {
     fprintf(stderr, "ERROR: Could not resolve address");
-    return 0;
+    return false;
   }
   int result = sendto(sock->handle,
                       (char *) data,
@@ -241,7 +243,7 @@ int udp_send(UDPSOCK sock, const BYTE *data, const size_t length)
   return result != UDP_ERROR;
 }
 
-int udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength)
+bool udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength)
 {
   struct sockaddr_in sender;
   int senderLen = sizeof(sender);
