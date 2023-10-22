@@ -15,9 +15,9 @@ extern "C" {
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-typedef char *LSTR;
+typedef char *lstr_t;
 
-#define _lstr_f(str) ((size_t *) (((LSTR) (str)) - sizeof(size_t)))
+#define _lstr_f(str) ((size_t *) (((lstr_t) (str)) - sizeof(size_t)))
 #define _lstr_n(str) (*(_lstr_f(str)))
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -39,9 +39,9 @@ typedef char *LSTR;
 #endif
 
 #define _lstr_malloc(length)                                                   \
-  (((LSTR) (_lstr_malloc_c(sizeof(size_t) + (length))) + sizeof(size_t)))
+  (((lstr_t) (_lstr_malloc_c(sizeof(size_t) + (length))) + sizeof(size_t)))
 #define _lstr_realloc(str, length)                                             \
-  (((LSTR) (_lstr_realloc_c(_lstr_f(str), sizeof(size_t) + (length))) +        \
+  (((lstr_t) (_lstr_realloc_c(_lstr_f(str), sizeof(size_t) + (length))) +      \
     sizeof(size_t)))
 #define _lstr_free(str) (_lstr_free_c(_lstr_f(str)))
 
@@ -55,7 +55,7 @@ typedef char *LSTR;
 
 #pragma region mutable
 
-static inline size_t lstrlen(const LSTR str)
+static inline size_t lstrlen(const lstr_t str)
 {
   if (str == NULL)
     return 0;
@@ -63,7 +63,7 @@ static inline size_t lstrlen(const LSTR str)
   return _lstr_n(str);
 }
 
-static inline LSTR lstrsetlen(LSTR str, size_t len)
+static inline lstr_t lstrsetlen(lstr_t str, size_t len)
 {
   if (str == NULL)
     str = _lstr_malloc(len);
@@ -78,10 +78,10 @@ static inline LSTR lstrsetlen(LSTR str, size_t len)
   return str;
 }
 
-static inline LSTR lstr(const char *cstr)
+static inline lstr_t lstr(const char *cstr)
 {
   size_t len = strlen(cstr);
-  LSTR res   = lstrnew(len);
+  lstr_t res = lstrnew(len);
   if (res == NULL)
     return NULL;
 
@@ -90,10 +90,10 @@ static inline LSTR lstr(const char *cstr)
   return res;
 }
 
-static inline LSTR lstrdup(const LSTR str)
+static inline lstr_t lstrdup(const lstr_t str)
 {
   size_t len = lstrlen(str);
-  LSTR res   = lstrnew(len);
+  lstr_t res = lstrnew(len);
   if (res == NULL)
     return NULL;
 
@@ -103,7 +103,7 @@ static inline LSTR lstrdup(const LSTR str)
   return res;
 }
 
-static inline int lfree(LSTR s)
+static inline int lfree(lstr_t s)
 {
   if (s)
   {
@@ -113,7 +113,7 @@ static inline int lfree(LSTR s)
   return 0;
 }
 
-static inline LSTR lstrcat(LSTR dst, const LSTR src)
+static inline lstr_t lstrcat(lstr_t dst, const lstr_t src)
 {
   size_t dst_len = lstrlen(dst);
   size_t src_len = lstrlen(src);
@@ -127,7 +127,7 @@ static inline LSTR lstrcat(LSTR dst, const LSTR src)
   return dst;
 }
 
-static inline LSTR lstrcatc(LSTR dst, const char *src)
+static inline lstr_t lstrcatc(lstr_t dst, const char *src)
 {
   size_t dst_len = lstrlen(dst);
   size_t src_len = strlen(src);
@@ -141,7 +141,7 @@ static inline LSTR lstrcatc(LSTR dst, const char *src)
   return dst;
 }
 
-static inline LSTR lstrins(LSTR dst, ptrdiff_t pos, const LSTR src)
+static inline lstr_t lstrins(lstr_t dst, ptrdiff_t pos, const lstr_t src)
 {
   size_t dst_len = lstrlen(dst);
   size_t src_len = lstrlen(src);
@@ -157,7 +157,7 @@ static inline LSTR lstrins(LSTR dst, ptrdiff_t pos, const LSTR src)
   return dst;
 }
 
-static inline LSTR lstrinsc(LSTR dst, ptrdiff_t pos, const char *src)
+static inline lstr_t lstrinsc(lstr_t dst, ptrdiff_t pos, const char *src)
 {
   size_t dst_len = lstrlen(dst);
   size_t src_len = strlen(src);
@@ -179,7 +179,7 @@ static inline LSTR lstrinsc(LSTR dst, ptrdiff_t pos, const char *src)
 
 #pragma region immutable
 
-static inline char *lstrc(const LSTR str)
+static inline char *lstrc(const lstr_t str)
 {
   size_t len = lstrlen(str);
   char *cstr = (char *) _lstr_malloc_c(len + 1);
@@ -192,7 +192,7 @@ static inline char *lstrc(const LSTR str)
   return cstr;
 }
 
-static inline ptrdiff_t lstrchr(const LSTR str, int chr)
+static inline ptrdiff_t lstrchr(const lstr_t str, int chr)
 {
   size_t s_len       = lstrlen(str);
   const char *result = memchr(str, chr, s_len);
@@ -203,7 +203,7 @@ static inline ptrdiff_t lstrchr(const LSTR str, int chr)
   return (ptrdiff_t) (result - str);
 }
 
-static inline ptrdiff_t lstrichr(const LSTR str, int chr, ptrdiff_t i)
+static inline ptrdiff_t lstrichr(const lstr_t str, int chr, ptrdiff_t i)
 {
   size_t str_len  = lstrlen(str);
   i               = (str_len + i) % str_len;
@@ -215,7 +215,7 @@ static inline ptrdiff_t lstrichr(const LSTR str, int chr, ptrdiff_t i)
   return (ptrdiff_t) (res - str);
 }
 
-static inline ptrdiff_t lstrnchr(const LSTR str, int chr, size_t len)
+static inline ptrdiff_t lstrnchr(const lstr_t str, int chr, size_t len)
 {
   size_t str_len  = lstrlen(str);
   const char *res = memchr(str, chr, len < str_len ? len : str_len);
@@ -226,7 +226,7 @@ static inline ptrdiff_t lstrnchr(const LSTR str, int chr, size_t len)
   return (ptrdiff_t) (res - str);
 }
 
-static ptrdiff_t lstrstr(const LSTR haystack, const LSTR needle)
+static ptrdiff_t lstrstr(const lstr_t haystack, const lstr_t needle)
 {
   size_t haystack_len = lstrlen(haystack);
   size_t needle_len   = lstrlen(needle);
@@ -242,7 +242,7 @@ static ptrdiff_t lstrstr(const LSTR haystack, const LSTR needle)
   return -1;
 }
 
-static ptrdiff_t lstristr(const LSTR haystack, const LSTR needle,
+static ptrdiff_t lstristr(const lstr_t haystack, const lstr_t needle,
                           const ptrdiff_t i)
 {
   size_t haystack_len = lstrlen(haystack);
@@ -258,7 +258,7 @@ static ptrdiff_t lstristr(const LSTR haystack, const LSTR needle,
   return -1;
 }
 
-static ptrdiff_t lstrrstr(const LSTR haystack, const LSTR needle)
+static ptrdiff_t lstrrstr(const lstr_t haystack, const lstr_t needle)
 {
   size_t haystack_len = lstrlen(haystack);
   size_t needle_len   = lstrlen(needle);
@@ -273,7 +273,7 @@ static ptrdiff_t lstrrstr(const LSTR haystack, const LSTR needle)
   return -1;
 }
 
-static ptrdiff_t lstrristr(const LSTR haystack, const LSTR needle,
+static ptrdiff_t lstrristr(const lstr_t haystack, const lstr_t needle,
                            const ptrdiff_t i)
 {
   size_t haystack_len = lstrlen(haystack);
@@ -290,7 +290,7 @@ static ptrdiff_t lstrristr(const LSTR haystack, const LSTR needle,
   return -1;
 }
 
-static inline ptrdiff_t lstrcmp(const LSTR str0, const LSTR str1)
+static inline ptrdiff_t lstrcmp(const lstr_t str0, const lstr_t str1)
 {
   size_t str0_len = lstrlen(str0);
   size_t str1_len = lstrlen(str1);
@@ -301,7 +301,8 @@ static inline ptrdiff_t lstrcmp(const LSTR str0, const LSTR str1)
   return memcmp(str0, str1, str0_len);
 }
 
-static inline ptrdiff_t lstrncmp(const LSTR str0, const LSTR str1, size_t len)
+static inline ptrdiff_t lstrncmp(const lstr_t str0, const lstr_t str1,
+                                 size_t len)
 {
   size_t str0_len = lstrlen(str0);
   size_t str1_len = lstrlen(str1);
@@ -315,12 +316,12 @@ static inline ptrdiff_t lstrncmp(const LSTR str0, const LSTR str1, size_t len)
   return str0_len - str1_len;
 }
 
-static inline LSTR lstrsub(const LSTR str, ptrdiff_t pos, size_t len)
+static inline lstr_t lstrsub(const lstr_t str, ptrdiff_t pos, size_t len)
 {
   size_t str_len = lstrlen(str);
   pos            = (str_len + pos) % str_len;
 
-  LSTR res = lstrnew(len);
+  lstr_t res = lstrnew(len);
   if (res == NULL)
     return NULL;
 
@@ -328,7 +329,7 @@ static inline LSTR lstrsub(const LSTR str, ptrdiff_t pos, size_t len)
   return res;
 }
 
-static inline LSTR lstrjoin(const LSTR sep, const LSTR strs[], size_t len)
+static inline lstr_t lstrjoin(const lstr_t sep, const lstr_t strs[], size_t len)
 {
   size_t sep_len   = lstrlen(sep);
   size_t res_len   = sep_len * (len - 1);
@@ -338,8 +339,8 @@ static inline LSTR lstrjoin(const LSTR sep, const LSTR strs[], size_t len)
     res_len += (str_lens[i] = lstrlen(strs[i]));
   }
 
-  LSTR res = lstrnew(res_len);
-  size_t j = 0;
+  lstr_t res = lstrnew(res_len);
+  size_t j   = 0;
   for (size_t i = 0; i < len; ++i)
   {
     memcpy(res + j, strs[i], str_lens[i]);
@@ -355,7 +356,7 @@ static inline LSTR lstrjoin(const LSTR sep, const LSTR strs[], size_t len)
   return res;
 }
 
-static inline LSTR *lstrsep(const LSTR str, const LSTR sep, size_t *len)
+static inline lstr_t *lstrsep(const lstr_t str, const lstr_t sep, size_t *len)
 {
   size_t str_len = lstrlen(str);
   size_t sep_len = lstrlen(sep);
@@ -368,7 +369,7 @@ static inline LSTR *lstrsep(const LSTR str, const LSTR sep, size_t *len)
   if (j == -1)
     return NULL;
 
-  LSTR *res = _lstr_calloc_c((str_len / sep_len), sizeof(LSTR));
+  lstr_t *res = _lstr_calloc_c((str_len / sep_len), sizeof(lstr_t));
   while (j > -1)
   {
     size_t sub_len = lstristr(str, sep, j) - j;
@@ -381,7 +382,7 @@ static inline LSTR *lstrsep(const LSTR str, const LSTR sep, size_t *len)
   return res;
 }
 
-static inline LSTR lstrupper(LSTR str)
+static inline lstr_t lstrupper(lstr_t str)
 {
   size_t len = lstrlen(str);
   for (size_t i = 0; i < len; ++i)
@@ -391,7 +392,7 @@ static inline LSTR lstrupper(LSTR str)
   return str;
 }
 
-static inline LSTR lstrlower(LSTR str)
+static inline lstr_t lstrlower(lstr_t str)
 {
   size_t len = lstrlen(str);
   for (size_t i = 0; i < len; ++i)

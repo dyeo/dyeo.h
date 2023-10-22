@@ -23,11 +23,11 @@ cor_name_fptr_t name_sig;
 int main(void)
 {
   test_group(cor, {
-    name_sig            = name_0;
-    int a               = 1;
-    cor_t(name) crt     = cor_init(&a);
-    CORRESULT result = {0};
-    result              = cor_1_call(name_sig, crt);
+    name_sig           = name_0;
+    int a              = 1;
+    cor_t(name) crt    = cor_init(&a);
+    corresult_t result = {0};
+    result             = cor_1_call(name_sig, crt);
     test_expr(result.status, int, cor_yielded);
     result = cor_1_call(name_sig, crt);
     test_expr(result.status, int, cor_yielded);

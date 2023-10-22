@@ -11,7 +11,7 @@ platforms.
 
 ### Structures
 
-  - `UDPSOCK`: Represents a UDP socket with fields for IP, port, and socket
+  - `udp_t`: Represents a UDP socket with fields for IP, port, and socket
 handle.
 
 ### Macros
@@ -80,7 +80,7 @@ extern "C" {
 #define UDP_BUFFER_LENGTH 1024
 #endif
 
-typedef struct UDPSOCK
+typedef struct udp_t
 {
   const char *ip;
   unsigned short port;
@@ -89,7 +89,7 @@ typedef struct UDPSOCK
 #else
   int handle;
 #endif
-} *UDPSOCK;
+} *udp_t;
 
 #ifndef BYTE
 #define BYTE unsigned char
@@ -97,13 +97,13 @@ typedef struct UDPSOCK
 
 extern bool udp_init();
 extern bool udp_cleanup();
-extern UDPSOCK udp_open(const char *ip, unsigned short port);
+extern udp_t udp_open(const char *ip, unsigned short port);
 #define udp_bind(sock, ip, port) ((sock) = udp_bindf(sock, ip, port))
-extern bool udp_send(UDPSOCK sock, const BYTE *data, const size_t length);
-extern bool udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength);
-extern bool udp_close(UDPSOCK sock);
+extern bool udp_send(udp_t sock, const BYTE *data, const size_t length);
+extern bool udp_recv(udp_t sock, BYTE **outData, size_t *outLength);
+extern bool udp_close(udp_t sock);
 
-extern UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port);
+extern udp_t udp_bindf(udp_t sock, const char *ip, unsigned short port);
 
 #ifdef __cplusplus
 }
@@ -176,12 +176,12 @@ bool udp_cleanup()
   return false;
 }
 
-UDPSOCK udp_open(const char *ip, unsigned short port)
+udp_t udp_open(const char *ip, unsigned short port)
 {
-  UDPSOCK sock = (UDPSOCK) malloc(sizeof(UDPSOCK));
+  udp_t sock = (udp_t) malloc(sizeof(udp_t));
   if (!sock)
   {
-    fprintf(stderr, "ERROR: Memory allocation failure UDPSOCK");
+    fprintf(stderr, "ERROR: Memory allocation failure udp_t");
     return NULL;
   }
   sock->ip     = strdup(ip);
@@ -195,7 +195,7 @@ UDPSOCK udp_open(const char *ip, unsigned short port)
   return sock;
 }
 
-UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port)
+udp_t udp_bindf(udp_t sock, const char *ip, unsigned short port)
 {
   if (sock == NULL)
   {
@@ -221,7 +221,7 @@ UDPSOCK udp_bindf(UDPSOCK sock, const char *ip, unsigned short port)
   return sock;
 }
 
-bool udp_close(UDPSOCK sock)
+bool udp_close(udp_t sock)
 {
   if (!sock)
   {
@@ -233,7 +233,7 @@ bool udp_close(UDPSOCK sock)
   return true;
 }
 
-bool udp_send(UDPSOCK sock, const BYTE *data, const size_t length)
+bool udp_send(udp_t sock, const BYTE *data, const size_t length)
 {
   struct sockaddr_in dest;
   if (inet_pton(AF_INET, sock->ip, &(dest.sin_addr)) != 1)
@@ -246,7 +246,7 @@ bool udp_send(UDPSOCK sock, const BYTE *data, const size_t length)
   return result != UDP_ERROR;
 }
 
-bool udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength)
+bool udp_recv(udp_t sock, BYTE **outData, size_t *outLength)
 {
   struct sockaddr_in sender;
   int senderLen = sizeof(sender);

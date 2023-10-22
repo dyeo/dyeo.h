@@ -5,7 +5,7 @@
 int main(void)
 {
   test_group(stream, {
-    STREAM *s = NULL;
+    stream_t *s = NULL;
     test_true(spushb(s, strlen("Hello, world!"), "Hello, world!"));
     test_expr(slength(s), int, strlen("Hello, world!"));
   });

@@ -73,28 +73,20 @@ extern void dt_unit_tests(void);
 // Everything below here is implementation details
 //
 
-extern void *
-dt_arrgrowf(void *a, size_t elemsize, size_t addlen, size_t min_cap);
+extern void *dt_arrgrowf(void *a, size_t elemsize, size_t addlen,
+                         size_t min_cap);
 extern void *dt_arrtonulltermf(void *a, size_t vallen);
 extern void dt_arrfreef(void *a);
 extern void dt_mapfree_impl(void *p, size_t elemsize);
-extern void *
-dt_mapget_key(void *a, size_t elemsize, void *key, size_t keysize, int mode);
-extern void *dt_mapget_key_ts(void *a,
-                              size_t elemsize,
-                              void *key,
-                              size_t keysize,
-                              ptrdiff_t *temp,
-                              int mode);
-extern void *dt_mapput_default(void *a, size_t elemsize);
-extern void *
-dt_mapput_key(void *a, size_t elemsize, void *key, size_t keysize, int mode);
-extern void *dt_mapdel_key(void *a,
-                           size_t elemsize,
-                           void *key,
-                           size_t keysize,
-                           size_t keyoffset,
+extern void *dt_mapget_key(void *a, size_t elemsize, void *key, size_t keysize,
                            int mode);
+extern void *dt_mapget_key_ts(void *a, size_t elemsize, void *key,
+                              size_t keysize, ptrdiff_t *temp, int mode);
+extern void *dt_mapput_default(void *a, size_t elemsize);
+extern void *dt_mapput_key(void *a, size_t elemsize, void *key, size_t keysize,
+                           int mode);
+extern void *dt_mapdel_key(void *a, size_t elemsize, void *key, size_t keysize,
+                           size_t keyoffset, int mode);
 extern void *dt_smpmode_impl(size_t elemsize, int mode);
 
 #if !defined(__cplusplus)
@@ -140,8 +132,7 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
 #define dt_arrsetlen(ArrPtr, Len)                                              \
   ((dt_arrcap(ArrPtr) < (size_t) (Len)                                         \
     ? dt_arrsetcap((ArrPtr), (size_t) (Len)),                                  \
-    0                                                                          \
-    : 0),                                                                      \
+    0 : 0),                                                                    \
    (ArrPtr) ? dt_arrhead(ArrPtr)->len = (size_t) (Len) : 0)
 #define dt_arrcap(ArrPtr) ((ArrPtr) ? dt_arrhead(ArrPtr)->cap : 0)
 #define dt_arrlen(ArrPtr) ((ArrPtr) ? (ptrdiff_t) dt_arrhead(ArrPtr)->len : 0)
@@ -154,8 +145,7 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
 #define dt_arrpop(ArrPtr)                                                      \
   (dt_arrhead(ArrPtr)->len--, (ArrPtr)[dt_arrhead(ArrPtr)->len])
 #define dt_arrpopn(ArrPtr, Index)                                              \
-  (dt_arrswap(ArrPtr, 0, dt_arrlen(ArrPtr) + 1),                               \
-   dt_arrdel(ArrPtr, 0),                                                       \
+  (dt_arrswap(ArrPtr, 0, dt_arrlen(ArrPtr) + 1), dt_arrdel(ArrPtr, 0),         \
    (ArrPtr)[dt_arrlen(ArrPtr) + 1])
 #define dt_arrdeq(ArrPtr) dt_arrpopn(ArrPtr, 0)
 #define dt_arraddn(ArrPtr, Len)                                                \
@@ -176,25 +166,22 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
   ((void) ((ArrPtr) ? _dt_free(dt_arrhead(ArrPtr)) : (void) 0), (ArrPtr) = NULL)
 #define dt_arrdel(ArrPtr, Index) dt_arrdeln(ArrPtr, Index, 1)
 #define dt_arrdeln(ArrPtr, Index, Len)                                         \
-  (memmove(&(ArrPtr)[Index],                                                   \
-           &(ArrPtr)[(Index) + (Len)],                                         \
+  (memmove(&(ArrPtr)[Index], &(ArrPtr)[(Index) + (Len)],                       \
            sizeof *(ArrPtr) * (dt_arrhead(ArrPtr)->len - (Len) - (Index))),    \
    dt_arrhead(ArrPtr)->len -= (Len))
 #define dt_arrdelswap(ArrPtr, Index)                                           \
   ((ArrPtr)[Index] = dt_arrlast(ArrPtr), dt_arrhead(ArrPtr)->len -= 1)
 #define dt_arrinsn(ArrPtr, Index, Len)                                         \
   (dt_arraddn((ArrPtr), (Len)),                                                \
-   memmove(&(ArrPtr)[(Index) + (Len)],                                         \
-           &(ArrPtr)[Index],                                                   \
+   memmove(&(ArrPtr)[(Index) + (Len)], &(ArrPtr)[Index],                       \
            sizeof *(ArrPtr) * (dt_arrhead(ArrPtr)->len - (Len) - (Index))))
 #define dt_arrins(ArrPtr, Index, v)                                            \
   (dt_arrinsn((ArrPtr), (Index), 1), (ArrPtr)[Index] = (v))
 
 #define dt_arrswap(ArrPtr, Index0, Index1)                                     \
-  (dt_arrmaygrow(ArrPtr, 1),                                                   \
-   (ArrPtr)[dt_arrlenu(ArrPtr)] = (ArrPtr)[Index0],                            \
-   (ArrPtr)[Index0]             = (ArrPtr)[Index1],                            \
-   (ArrPtr)[Index1]             = (ArrPtr)[dt_arrlenu(ArrPtr)])
+  (dt_arrmaygrow(ArrPtr, 1), (ArrPtr)[dt_arrlenu(ArrPtr)] = (ArrPtr)[Index0],  \
+   (ArrPtr)[Index0] = (ArrPtr)[Index1],                                        \
+   (ArrPtr)[Index1] = (ArrPtr)[dt_arrlenu(ArrPtr)])
 
 #define dt_arrmaygrow(ArrPtr, Len)                                             \
   ((!(ArrPtr) || dt_arrhead(ArrPtr)->len + (Len) > dt_arrhead(ArrPtr)->cap)    \
@@ -259,44 +246,34 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
     TValue value;                                                              \
   }
 
-#define dt_mapput(MapPtr, Key, Value)                                                                \
-  ((MapPtr)                             = dt_mapput_key((MapPtr),                                    \
-                            sizeof *(MapPtr),                            \
-                            (void *) DT_ADDRESSOF((MapPtr)->key, (Key)), \
-                            sizeof(MapPtr)->key,                         \
-                            0),                                          \
-   (MapPtr)[dt_temp((MapPtr) -1)].key   = (Key),                                                     \
+#define dt_mapput(MapPtr, Key, Value)                                          \
+  ((MapPtr) = dt_mapput_key((MapPtr), sizeof *(MapPtr),                        \
+                            (void *) DT_ADDRESSOF((MapPtr)->key, (Key)),       \
+                            sizeof(MapPtr)->key, 0),                           \
+   (MapPtr)[dt_temp((MapPtr) -1)].key   = (Key),                               \
    (MapPtr)[dt_temp((MapPtr) -1)].value = (Value))
 
 #define dt_mapadd dt_mapput // synonym
 
 #define dt_mapputs(MapPtr, Pair)                                               \
-  ((MapPtr)                       = dt_mapput_key((MapPtr),                    \
-                            sizeof *(MapPtr),            \
-                            &(Pair).key,                 \
-                            sizeof(Pair).key,            \
-                            DT_MAP_BINARY),              \
+  ((MapPtr) = dt_mapput_key((MapPtr), sizeof *(MapPtr), &(Pair).key,           \
+                            sizeof(Pair).key, DT_MAP_BINARY),                  \
    (MapPtr)[dt_temp((MapPtr) -1)] = (Pair))
 
 #define dt_mapadds dt_mapputs // synonym
 
 #define dt_mapgeti(MapPtr, Key)                                                \
-  ((MapPtr) = dt_mapget_key((MapPtr),                                          \
-                            sizeof *(MapPtr),                                  \
+  ((MapPtr) = dt_mapget_key((MapPtr), sizeof *(MapPtr),                        \
                             (void *) DT_ADDRESSOF((MapPtr)->key, (Key)),       \
-                            sizeof(MapPtr)->key,                               \
-                            DT_MAP_BINARY),                                    \
+                            sizeof(MapPtr)->key, DT_MAP_BINARY),               \
    dt_temp((MapPtr) -1))
 
 #define dt_maphask(MapPtr, Key) ((bool) (dt_mapgeti(MapPtr, Key) >= 0))
 
 #define dt_mapgeti_ts(MapPtr, Key, temp)                                       \
-  ((MapPtr) = dt_mapget_key_ts((MapPtr),                                       \
-                               sizeof *(MapPtr),                               \
+  ((MapPtr) = dt_mapget_key_ts((MapPtr), sizeof *(MapPtr),                     \
                                (void *) DT_ADDRESSOF((MapPtr)->key, (Key)),    \
-                               sizeof(MapPtr)->key,                            \
-                               &(temp),                                        \
-                               DT_MAP_BINARY),                                 \
+                               sizeof(MapPtr)->key, &(temp), DT_MAP_BINARY),   \
    (temp))
 
 #define dt_mapgetp(MapPtr, Key)                                                \
@@ -306,12 +283,9 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
   ((void) dt_mapgeti_ts(MapPtr, Key, temp), &(MapPtr)[temp])
 
 #define dt_mapdel(MapPtr, Key)                                                 \
-  (((MapPtr) = dt_mapdel_key((MapPtr),                                         \
-                             sizeof *(MapPtr),                                 \
-                             (void *) DT_ADDRESSOF((MapPtr)->key, (Key)),      \
-                             sizeof(MapPtr)->key,                              \
-                             DT_OFFSETOF((MapPtr), key),                       \
-                             DT_MAP_BINARY)),                                  \
+  (((MapPtr) = dt_mapdel_key(                                                  \
+      (MapPtr), sizeof *(MapPtr), (void *) DT_ADDRESSOF((MapPtr)->key, (Key)), \
+      sizeof(MapPtr)->key, DT_OFFSETOF((MapPtr), key), DT_MAP_BINARY)),        \
    (MapPtr) ? dt_temp((MapPtr) -1) : 0)
 
 #define dt_mapdefault(MapPtr, Value)                                           \
@@ -339,30 +313,20 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
   (dt_mapgeti(MapPtr, Key) == -1 ? NULL : &(MapPtr)[dt_temp((MapPtr) -1)])
 
 #define dt_smpput(MapPtr, Key, Value)                                          \
-  ((MapPtr)                             = dt_mapput_key((MapPtr),              \
-                            sizeof *(MapPtr),      \
-                            (void *) (Key),        \
-                            sizeof(MapPtr)->key,   \
-                            DT_MAP_STRING),        \
+  ((MapPtr) = dt_mapput_key((MapPtr), sizeof *(MapPtr), (void *) (Key),        \
+                            sizeof(MapPtr)->key, DT_MAP_STRING),               \
    (MapPtr)[dt_temp((MapPtr) -1)].value = (Value))
 
 #define dt_smpadd dt_smpput // synonym
 
 #define dt_smpputi(MapPtr, Key, Value)                                         \
-  ((MapPtr)                             = dt_mapput_key((MapPtr),              \
-                            sizeof *(MapPtr),      \
-                            (void *) (Key),        \
-                            sizeof(MapPtr)->key,   \
-                            DT_MAP_STRING),        \
-   (MapPtr)[dt_temp((MapPtr) -1)].value = (Value),                             \
-   dt_temp((MapPtr) -1))
+  ((MapPtr) = dt_mapput_key((MapPtr), sizeof *(MapPtr), (void *) (Key),        \
+                            sizeof(MapPtr)->key, DT_MAP_STRING),               \
+   (MapPtr)[dt_temp((MapPtr) -1)].value = (Value), dt_temp((MapPtr) -1))
 
 #define dt_smpputs(MapPtr, Pair)                                               \
-  ((MapPtr)                       = dt_mapput_key((MapPtr),                    \
-                            sizeof *(MapPtr),            \
-                            (void *) (Pair).key,         \
-                            sizeof(Pair).key,            \
-                            DT_MAP_STRING),              \
+  ((MapPtr) = dt_mapput_key((MapPtr), sizeof *(MapPtr), (void *) (Pair).key,   \
+                            sizeof(Pair).key, DT_MAP_STRING),                  \
    (MapPtr)[dt_temp((MapPtr) -1)] = (Pair),                                    \
    (MapPtr)[dt_temp((MapPtr) -1)].key =                                        \
      dt_temp_key((MapPtr) -1)) // above line overwrites whole structure, so
@@ -370,29 +334,20 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
                                // here if it was allocated internally
 
 #define dt_pshput(MapPtr, p)                                                   \
-  ((MapPtr)                       = dt_mapput_key((MapPtr),                    \
-                            sizeof *(MapPtr),            \
-                            (void *) (p)->key,           \
-                            sizeof(p)->key,              \
-                            DT_MAP_PTR_TO_STRING),       \
+  ((MapPtr) = dt_mapput_key((MapPtr), sizeof *(MapPtr), (void *) (p)->key,     \
+                            sizeof(p)->key, DT_MAP_PTR_TO_STRING),             \
    (MapPtr)[dt_temp((MapPtr) -1)] = (p))
 
 #define dt_smpgeti(MapPtr, Key)                                                \
-  ((MapPtr) = dt_mapget_key((MapPtr),                                          \
-                            sizeof *(MapPtr),                                  \
-                            (void *) (Key),                                    \
-                            sizeof(MapPtr)->key,                               \
-                            DT_MAP_STRING),                                    \
+  ((MapPtr) = dt_mapget_key((MapPtr), sizeof *(MapPtr), (void *) (Key),        \
+                            sizeof(MapPtr)->key, DT_MAP_STRING),               \
    dt_temp((MapPtr) -1))
 
 #define dt_smphask(MapPtr, Key) ((bool) (dt_smpgeti(MapPtr, Key) >= 0))
 
 #define dt_pshgeti(MapPtr, Key)                                                \
-  ((MapPtr) = dt_mapget_key((MapPtr),                                          \
-                            sizeof *(MapPtr),                                  \
-                            (void *) (Key),                                    \
-                            sizeof(*(MapPtr))->key,                            \
-                            DT_MAP_PTR_TO_STRING),                             \
+  ((MapPtr) = dt_mapget_key((MapPtr), sizeof *(MapPtr), (void *) (Key),        \
+                            sizeof(*(MapPtr))->key, DT_MAP_PTR_TO_STRING),     \
    dt_temp((MapPtr) -1))
 
 #define dt_smpgetp(MapPtr, Key)                                                \
@@ -402,20 +357,14 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
   ((void) dt_pshgeti(MapPtr, Key), (MapPtr)[dt_temp((MapPtr) -1)])
 
 #define dt_smpdel(MapPtr, Key)                                                 \
-  (((MapPtr) = dt_mapdel_key((MapPtr),                                         \
-                             sizeof *(MapPtr),                                 \
-                             (void *) (Key),                                   \
-                             sizeof(MapPtr)->key,                              \
-                             DT_OFFSETOF((MapPtr), key),                       \
+  (((MapPtr) = dt_mapdel_key((MapPtr), sizeof *(MapPtr), (void *) (Key),       \
+                             sizeof(MapPtr)->key, DT_OFFSETOF((MapPtr), key),  \
                              DT_MAP_STRING)),                                  \
    (MapPtr) ? dt_temp((MapPtr) -1) : 0)
 #define dt_pshdel(MapPtr, Key)                                                 \
-  (((MapPtr) = dt_mapdel_key((MapPtr),                                         \
-                             sizeof *(MapPtr),                                 \
-                             (void *) (Key),                                   \
-                             sizeof(*(MapPtr))->key,                           \
-                             DT_OFFSETOF(*(MapPtr), key),                      \
-                             DT_MAP_PTR_TO_STRING)),                           \
+  (((MapPtr) = dt_mapdel_key(                                                  \
+      (MapPtr), sizeof *(MapPtr), (void *) (Key), sizeof(*(MapPtr))->key,      \
+      DT_OFFSETOF(*(MapPtr), key), DT_MAP_PTR_TO_STRING)),                     \
    (MapPtr) ? dt_temp((MapPtr) -1) : 0)
 
 #define dt_smp_new_arena(MapPtr)                                               \
@@ -600,8 +549,8 @@ extern char *dt_dumps(const dt_node *node);
 extern char *dt_dumps_ex(const dt_node *node, const dt_dumps_settings_t *set);
 
 extern dt_node *dt_loadb(const size_t len, const byte *bytes);
-extern dt_node *
-dt_loadb_impl(const size_t len, const byte *bytes, size_t *offset);
+extern dt_node *dt_loadb_impl(const size_t len, const byte *bytes,
+                              size_t *offset);
 extern byte *dt_dumpb(const dt_node *node, size_t *len);
 extern void dt_dumpb_impl(const dt_node *node, byte *bytes);
 
@@ -648,8 +597,8 @@ static inline dt_linecol dt_get_linecol(const char *string, size_t offset)
       break;                                                                   \
     }                                                                          \
     dt_linecol lc = dt_get_linecol(STRING, OFFSET);                            \
-    fprintf(                                                                   \
-      stderr, "ERROR: %llu:%lld: " FORMAT "\n", lc.line, lc.col, __VA_ARGS__); \
+    fprintf(stderr, "ERROR: %llu:%lld: " FORMAT "\n", lc.line, lc.col,         \
+            __VA_ARGS__);                                                      \
     exit(1);                                                                   \
   } while (0)
 
@@ -674,8 +623,8 @@ static inline dt_linecol dt_get_linecol(const char *string, size_t offset)
   extern char *dt_dumps_##NAME(const dt_node *node,                            \
                                const dt_dumps_settings_t *set);                \
   extern void dt_dumpb_##NAME(const dt_node *node, byte *bytes);               \
-  extern dt_node *dt_loadb_##NAME(                                             \
-    size_t len, const byte *bytes, size_t *offset);
+  extern dt_node *dt_loadb_##NAME(size_t len, const byte *bytes,               \
+                                  size_t *offset);
 DT_TYPES_LIST
 #undef X
 
@@ -875,8 +824,8 @@ void dt_rand_seed(size_t seed)
 
 #define DT_SIZE_T_BITS ((sizeof(size_t)) * 8)
 
-static size_t
-dt_probe_position(size_t hash, size_t slot_count, size_t slot_log2)
+static size_t dt_probe_position(size_t hash, size_t slot_count,
+                                size_t slot_log2)
 {
   (void) slot_log2;
   size_t pos;
@@ -902,9 +851,8 @@ static dt_hshindex_t *dt_make_hash_index(size_t slot_count, dt_hshindex_t *ot)
 {
   dt_hshindex_t *t;
   t = (dt_hshindex_t *) _dt_realloc(
-    NULL,
-    (slot_count >> DT_BUCKET_SHIFT) * sizeof(dt_hshbucket_t) +
-      sizeof(dt_hshindex_t) + DT_CACHE_LINE_SIZE - 1);
+    NULL, (slot_count >> DT_BUCKET_SHIFT) * sizeof(dt_hshbucket_t) +
+            sizeof(dt_hshindex_t) + DT_CACHE_LINE_SIZE - 1);
   t->storage =
     (dt_hshbucket_t *) DT_ALIGN_FWD((size_t) (t + 1), DT_CACHE_LINE_SIZE);
   t->slot_count      = slot_count;
@@ -1313,13 +1261,8 @@ size_t dt_hash_bytes(void *p, size_t len, size_t seed)
 #pragma warning(pop)
 #endif
 
-static int dt_is_key_equal(void *a,
-                           size_t elemsize,
-                           void *key,
-                           size_t keysize,
-                           size_t keyoffset,
-                           int mode,
-                           size_t i)
+static int dt_is_key_equal(void *a, size_t elemsize, void *key, size_t keysize,
+                           size_t keyoffset, int mode, size_t i)
 {
   if (mode >= DT_MAP_STRING)
     return 0 == strcmp((char *) key,
@@ -1352,12 +1295,8 @@ void dt_mapfree_impl(void *a, size_t elemsize)
   _dt_free(dt_arrhead(a));
 }
 
-static ptrdiff_t dt_map_find_slot(void *a,
-                                  size_t elemsize,
-                                  void *key,
-                                  size_t keysize,
-                                  size_t keyoffset,
-                                  int mode)
+static ptrdiff_t dt_map_find_slot(void *a, size_t elemsize, void *key,
+                                  size_t keysize, size_t keyoffset, int mode)
 {
   void *raw_a          = DT_HASH_TO_ARR(a, elemsize);
   dt_hshindex_t *table = dt_hash_table(raw_a);
@@ -1385,8 +1324,8 @@ static ptrdiff_t dt_map_find_slot(void *a,
     {
       if (bucket->hash[i] == hash)
       {
-        if (dt_is_key_equal(
-              a, elemsize, key, keysize, keyoffset, mode, bucket->index[i]))
+        if (dt_is_key_equal(a, elemsize, key, keysize, keyoffset, mode,
+                            bucket->index[i]))
         {
           return (pos & ~DT_BUCKET_MASK) + i;
         }
@@ -1403,8 +1342,8 @@ static ptrdiff_t dt_map_find_slot(void *a,
     {
       if (bucket->hash[i] == hash)
       {
-        if (dt_is_key_equal(
-              a, elemsize, key, keysize, keyoffset, mode, bucket->index[i]))
+        if (dt_is_key_equal(a, elemsize, key, keysize, keyoffset, mode,
+                            bucket->index[i]))
         {
           return (pos & ~DT_BUCKET_MASK) + i;
         }
@@ -1423,12 +1362,8 @@ static ptrdiff_t dt_map_find_slot(void *a,
   /* NOTREACHED */
 }
 
-void *dt_mapget_key_ts(void *a,
-                       size_t elemsize,
-                       void *key,
-                       size_t keysize,
-                       ptrdiff_t *temp,
-                       int mode)
+void *dt_mapget_key_ts(void *a, size_t elemsize, void *key, size_t keysize,
+                       ptrdiff_t *temp, int mode)
 {
   size_t keyoffset = 0;
   if (a == NULL)
@@ -1469,8 +1404,8 @@ void *dt_mapget_key_ts(void *a,
   }
 }
 
-void *
-dt_mapget_key(void *a, size_t elemsize, void *key, size_t keysize, int mode)
+void *dt_mapget_key(void *a, size_t elemsize, void *key, size_t keysize,
+                    int mode)
 {
   ptrdiff_t temp;
   void *p = dt_mapget_key_ts(a, elemsize, key, keysize, &temp, mode);
@@ -1496,8 +1431,8 @@ void *dt_mapput_default(void *a, size_t elemsize)
 
 static char *dt_strdup(char *str);
 
-void *
-dt_mapput_key(void *a, size_t elemsize, void *key, size_t keysize, int mode)
+void *dt_mapput_key(void *a, size_t elemsize, void *key, size_t keysize,
+                    int mode)
 {
   size_t keyoffset = 0;
   void *raw_a;
@@ -1560,12 +1495,7 @@ dt_mapput_key(void *a, size_t elemsize, void *key, size_t keysize, int mode)
       {
         if (bucket->hash[i] == hash)
         {
-          if (dt_is_key_equal(raw_a,
-                              elemsize,
-                              key,
-                              keysize,
-                              keyoffset,
-                              mode,
+          if (dt_is_key_equal(raw_a, elemsize, key, keysize, keyoffset, mode,
                               bucket->index[i]))
           {
             dt_temp(a) = bucket->index[i];
@@ -1594,12 +1524,7 @@ dt_mapput_key(void *a, size_t elemsize, void *key, size_t keysize, int mode)
       {
         if (bucket->hash[i] == hash)
         {
-          if (dt_is_key_equal(raw_a,
-                              elemsize,
-                              key,
-                              keysize,
-                              keyoffset,
-                              mode,
+          if (dt_is_key_equal(raw_a, elemsize, key, keysize, keyoffset, mode,
                               bucket->index[i]))
           {
             dt_temp(a) = bucket->index[i];
@@ -1681,12 +1606,8 @@ void *dt_smpmode_impl(size_t elemsize, int mode)
   return DT_ARR_TO_HASH(a, elemsize);
 }
 
-void *dt_mapdel_key(void *a,
-                    size_t elemsize,
-                    void *key,
-                    size_t keysize,
-                    size_t keyoffset,
-                    int mode)
+void *dt_mapdel_key(void *a, size_t elemsize, void *key, size_t keysize,
+                    size_t keyoffset, int mode)
 {
   if (a == NULL)
   {
@@ -1734,26 +1655,18 @@ void *dt_mapdel_key(void *a,
         {
           // swap delete
           memmove((char *) a + elemsize * old_index,
-                  (char *) a + elemsize * final_index,
-                  elemsize);
+                  (char *) a + elemsize * final_index, elemsize);
 
           // now find the slot for the last element
           if (mode == DT_MAP_STRING)
             slot = dt_map_find_slot(
-              a,
-              elemsize,
+              a, elemsize,
               *(char **) ((char *) a + elemsize * old_index + keyoffset),
-              keysize,
-              keyoffset,
-              mode);
+              keysize, keyoffset, mode);
           else
-            slot =
-              dt_map_find_slot(a,
-                               elemsize,
-                               (char *) a + elemsize * old_index + keyoffset,
-                               keysize,
-                               keyoffset,
-                               mode);
+            slot = dt_map_find_slot(
+              a, elemsize, (char *) a + elemsize * old_index + keyoffset,
+              keysize, keyoffset, mode);
           DT_ASSERT(slot >= 0);
           b = &table->storage[slot >> DT_BUCKET_SHIFT];
           i = slot & DT_BUCKET_MASK;
@@ -1993,10 +1906,10 @@ bool dt_dumpf(const dt_node *node, const char *filepath)
   char *data = dt_dumps(node);
   if (data == NULL)
   {
-    fprintf(stderr, "ERROR: Could not dump node data\n", filepath);
+    fprintf(stderr, "ERROR: Could not dump node data\n");
     return false;
   }
-  size_t len    = strlen(data);
+  size_t len = strlen(data);
   fwrite(data, sizeof(char), len, file);
   fclose(file);
   return true;
@@ -2093,8 +2006,7 @@ char *dt_dumps_raw_string(const char *string, const dt_dumps_settings_t *set)
 
 // -----------------------------------------------------------------------------
 
-dt_node *(*_dt_loadb_ptrs[dt_type_count])(const size_t,
-                                          const byte *,
+dt_node *(*_dt_loadb_ptrs[dt_type_count])(const size_t, const byte *,
                                           size_t *) = {
 #define X(NAME, ...) dt_loadb_##NAME,
   DT_TYPES_LIST
@@ -2104,10 +2016,8 @@ dt_node *(*_dt_loadb_ptrs[dt_type_count])(const size_t,
 dt_node *dt_loadb(const size_t len, const byte *bytes)
 {
   dt_test(len > 3, "Invalid binary header", (char *) bytes, 0);
-  dt_test(bytes[0] == 'd' && bytes[1] == 't',
-          "Invalid binary header",
-          (char *) bytes,
-          0);
+  dt_test(bytes[0] == 'd' && bytes[1] == 't', "Invalid binary header",
+          (char *) bytes, 0);
   byte version = bytes[3];
   (void) version;
   size_t offset = 3;
@@ -2118,8 +2028,8 @@ dt_node *dt_loadb_impl(const size_t len, const byte *bytes, size_t *offset)
 {
   dt_type type;
   dt_popval(byte, bytes, offset, type);
-  dt_test(
-    type >= 0 && type < dt_type_count, "Invalid type", (char *) bytes, *offset);
+  dt_test(type >= 0 && type < dt_type_count, "Invalid type", (char *) bytes,
+          *offset);
   return _dt_loadb_ptrs[type](len, bytes, offset);
 }
 
@@ -2235,8 +2145,8 @@ void dt_loads_comment(const char *string, size_t *offset)
 void dt_consume_token(const char *string, size_t *offset, char token)
 {
   dt_loads_comment(string, offset);
-  dt_testf(
-    string[*offset] == token, string, *offset, "Expected token '%c'", token);
+  dt_testf(string[*offset] == token, string, *offset, "Expected token '%c'",
+           token);
   *offset += 1;
   dt_loads_comment(string, offset);
 }

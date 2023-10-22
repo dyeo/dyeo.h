@@ -3,10 +3,10 @@
 
 ## Description
 
-A single-header, easy-to-use .WAV file encoder and decoder. Currently supports
+A single-header, easy-to-use .wav file encoder and decoder. Currently supports
 16- and 32-bit PCM, and 32-bit float. The decoder utomatically de-interlaces the
 audio data into separate channels for easy modification. Additionally, methods
-for modifying and generating WAV data are also available, and all formats are
+for modifying and generating wav data are also available, and all formats are
 inter-convertible.
 
 ## Usage
@@ -32,12 +32,12 @@ compilation unit.
 
 ### Data Structures
 
-1. `WAV` - Represents a WAV audio piece, including its format, channels,
+1. `wav_t` - Represents a wav audio file, including its format, channels,
 sample rate, sample count, and data.
-2. `WAVFORMAT` - Enumerated type defining various WAV formats.
-3. `WAVFORMATTYPE` - Enumerated type defining various WAV audio formats.
-4. `WAVSAMPLERATE` - Enumerated type for supported sample rates.
-5. `WAVBITDEPTH` - Enumerated type for supported bits per sample values.
+2. `wavtype_t` - Enumerated type defining various wav formats.
+3. `wavformat_t` - Enumerated type defining various wav audio formats.
+4. `wavrate_t` - Enumerated type for supported sample rates.
+5. `wavbits_t` - Enumerated type for supported bits per sample values.
 
 ### Conversion Functions
 
@@ -53,33 +53,33 @@ sample rate, sample count, and data.
 
 ### Encoding and Decoding
 
-1. Conversion to specific WAV formats:
+1. Conversion to specific wav formats:
     - `wav_to_pcm16`
     - `wav_to_pcm32`
     - `wav_to_float32`
 
-2. Load and dump WAV from and to files:
+2. Load and dump wav from and to files:
     - `wav_loadf`
     - `wav_dumpf`
 
-3. Load and dump WAV from and to byte arrays:
+3. Load and dump wav from and to byte arrays:
     - `wav_loadb`
     - `wav_dumpb`
 
-4. Release memory allocated for a `WAV` structure:
+4. Release memory allocated for a `wav_t` structure:
     - `wav_free`
 
 ### Playback
 
-1. Play WAV audio:
+1. Play wav audio:
     - `wav_play`
 
-2. Play WAV audio asynchronously:
+2. Play wav audio asynchronously:
     - `wav_play_async`
 
 ### Generation
 
-1. Generate WAV audio from callbacks:
+1. Generate wav audio from callbacks:
     - `wav_gen_pcm16`
     - `wav_gen_pcm32`
     - `wav_gen_float32`
@@ -92,9 +92,9 @@ callback types are provided:
 
 ## Notes
 
-1. Ensure you free any `WAV` structures using the `wav_free` function to
+1. Ensure you free any `wav_t` structures using the `wav_free` function to
 avoid memory leaks.
-2. When generating WAV data using the provided generation functions, ensure your
+2. When generating wav data using the provided generation functions, ensure your
 callbacks provide valid sample data for the specified format.
 */
 #ifndef _WAV_H
@@ -136,15 +136,15 @@ extern "C" {
   X(adpcm4, int16_t, wav_adpcm, true, uint8_t)
 
 #define X(NAME, ...) wav_##NAME,
-typedef enum WAVFORMAT
+typedef enum wavtype_t
 {
   WAV_FORMAT_X_LIST
-} WAVFORMAT;
+} wavtype_t;
 #undef X
 
-typedef struct WAV
+typedef struct wav_t
 {
-  WAVFORMAT format;
+  wavtype_t format;
   uint16_t channels;
   uint32_t sampleRate;
   uint32_t sampleCount;
@@ -154,7 +154,7 @@ typedef struct WAV
     WAV_FORMAT_X_LIST
 #undef X
   };
-} *WAV;
+} *wav_t;
 
 #define WAV_AUDIO_FOREACH(AUDIO, C, S)                                         \
   (uint32_t C = 0, S = 0; S < (AUDIO)->sampleCount;                            \
@@ -170,12 +170,12 @@ typedef struct WAV
   X(wav_float, 0x0003)                                                         \
   X(wav_extended, 0xFFFE)
 
-typedef enum WAVFORMATTYPE
+typedef enum wavformat_t
 {
 #define X(A, B) A = B,
   WAV_AUDIOFORMAT_X_LIST
 #undef X
-} WAVFORMATTYPE;
+} wavformat_t;
 
 static const char *WAVFORMATTYPE_names[] = {
 #define X(A, ...) #A,
@@ -183,13 +183,13 @@ static const char *WAVFORMATTYPE_names[] = {
 #undef X
 };
 
-static WAVFORMATTYPE WAVFORMAT_lookup[] = {
+static wavformat_t WAVFORMAT_lookup[] = {
 #define X(NAME, TYPE, FORMAT, ...) FORMAT,
   WAV_FORMAT_X_LIST
 #undef X
 };
 
-typedef enum WAVSAMPLERATE
+typedef enum wavrate_t
 {
   wav_8000hz   = 8000,
   wav_11025hz  = 11025,
@@ -203,9 +203,9 @@ typedef enum WAVSAMPLERATE
   wav_176400hz = 176400,
   wav_192000hz = 192000,
   wav_384000hz = 384000
-} WAVSAMPLERATE;
+} wavrate_t;
 
-typedef enum WAVBITDEPTH
+typedef enum wavbits_t
 {
   wav_4bit   = 4,
   wav_8bit   = 8,
@@ -215,7 +215,7 @@ typedef enum WAVBITDEPTH
   wav_48bit  = 48,
   wav_64bit  = 64,
   wav_128bit = 128,
-} WAVBITDEPTH;
+} wavbits_t;
 
 // -----------------------------------------------------------------------------
 
@@ -232,23 +232,23 @@ extern uint8_t wav_pcm16_to_adpcm4(const int16_t pcm_sample, int32_t *predictor,
 
 // -----------------------------------------------------------------------------
 
-extern void wav_to_pcm16(WAV wav);
-extern void wav_to_pcm16(WAV wav);
-extern void wav_to_pcm32(WAV wav);
-extern void wav_to_float32(WAV wav);
+extern void wav_to_pcm16(wav_t wav);
+extern void wav_to_pcm16(wav_t wav);
+extern void wav_to_pcm32(wav_t wav);
+extern void wav_to_float32(wav_t wav);
 
 // -----------------------------------------------------------------------------
 
-extern WAV wav_loadf(const char *filename);
-extern bool wav_dumpf(const char *filename, const WAV wav);
+extern wav_t wav_loadf(const char *filename);
+extern bool wav_dumpf(const char *filename, const wav_t wav);
 
-extern WAV wav_loadb(size_t len, uint8_t *data);
-extern uint8_t *wav_dumpb(const WAV wav, size_t *len);
+extern wav_t wav_loadb(size_t len, uint8_t *data);
+extern uint8_t *wav_dumpb(const wav_t wav, size_t *len);
 
-bool wav_play(const WAV wav);
-bool wav_play_async(const WAV wav);
+bool wav_play(const wav_t wav);
+bool wav_play_async(const wav_t wav);
 
-extern void wav_free(WAV wav);
+extern void wav_free(wav_t wav);
 
 // -----------------------------------------------------------------------------
 
@@ -269,14 +269,14 @@ typedef float (*wav_gen_float32_callback)(uint32_t channels,
                                           int32_t channelIndex,
                                           int32_t sampleIndex);
 
-WAV wav_gen_pcm16(uint32_t channels, uint32_t sampleRate, uint32_t sampleCount,
-                  wav_gen_pcm16_callback callback);
+wav_t wav_gen_pcm16(uint32_t channels, uint32_t sampleRate,
+                    uint32_t sampleCount, wav_gen_pcm16_callback callback);
 
-WAV wav_gen_pcm32(uint32_t channels, uint32_t sampleRate, uint32_t sampleCount,
-                  wav_gen_pcm32_callback callback);
+wav_t wav_gen_pcm32(uint32_t channels, uint32_t sampleRate,
+                    uint32_t sampleCount, wav_gen_pcm32_callback callback);
 
-WAV wav_gen_float32(uint32_t channels, uint32_t sampleRate,
-                    uint32_t sampleCount, wav_gen_float32_callback callback);
+wav_t wav_gen_float32(uint32_t channels, uint32_t sampleRate,
+                      uint32_t sampleCount, wav_gen_float32_callback callback);
 
 // -----------------------------------------------------------------------------
 
@@ -532,14 +532,14 @@ uint8_t *_wav_encode_adpcm4(const int16_t *pcm, size_t length,
 
 // -----------------------------------------------------------------------------
 
-WAV wav_gen_pcm16(uint32_t channels, uint32_t sampleRate, uint32_t sampleCount,
-                  wav_gen_pcm16_callback callback)
+wav_t wav_gen_pcm16(uint32_t channels, uint32_t sampleRate,
+                    uint32_t sampleCount, wav_gen_pcm16_callback callback)
 {
   if (channels == 0 || sampleRate == 0 || sampleCount == 0)
   {
     return NULL;
   }
-  WAV wav          = malloc(sizeof(struct WAV));
+  wav_t wav        = malloc(sizeof(struct wav_t));
   wav->format      = wav_pcm16;
   wav->channels    = channels;
   wav->sampleRate  = sampleRate;
@@ -563,14 +563,14 @@ WAV wav_gen_pcm16(uint32_t channels, uint32_t sampleRate, uint32_t sampleCount,
   return wav;
 }
 
-WAV wav_gen_pcm32(uint32_t channels, uint32_t sampleRate, uint32_t sampleCount,
-                  wav_gen_pcm32_callback callback)
+wav_t wav_gen_pcm32(uint32_t channels, uint32_t sampleRate,
+                    uint32_t sampleCount, wav_gen_pcm32_callback callback)
 {
   if (channels == 0 || sampleRate == 0 || sampleCount == 0)
   {
     return NULL;
   }
-  WAV wav          = malloc(sizeof(struct WAV));
+  wav_t wav        = malloc(sizeof(struct wav_t));
   wav->format      = wav_pcm32;
   wav->channels    = channels;
   wav->sampleRate  = sampleRate;
@@ -594,14 +594,14 @@ WAV wav_gen_pcm32(uint32_t channels, uint32_t sampleRate, uint32_t sampleCount,
   return wav;
 }
 
-WAV wav_gen_float32(uint32_t channels, uint32_t sampleRate,
-                    uint32_t sampleCount, wav_gen_float32_callback callback)
+wav_t wav_gen_float32(uint32_t channels, uint32_t sampleRate,
+                      uint32_t sampleCount, wav_gen_float32_callback callback)
 {
   if (channels == 0 || sampleRate == 0 || sampleCount == 0)
   {
     return NULL;
   }
-  WAV wav          = malloc(sizeof(struct WAV));
+  wav_t wav        = malloc(sizeof(struct wav_t));
   wav->format      = wav_float32;
   wav->channels    = channels;
   wav->sampleRate  = sampleRate;
@@ -627,7 +627,7 @@ WAV wav_gen_float32(uint32_t channels, uint32_t sampleRate,
 
 // -----------------------------------------------------------------------------
 
-void wav_to_pcm16(WAV wav)
+void wav_to_pcm16(wav_t wav)
 {
   if (!wav)
     return;
@@ -665,7 +665,7 @@ void wav_to_pcm16(WAV wav)
   wav->format = wav_pcm16;
 }
 
-void wav_to_pcm32(WAV wav)
+void wav_to_pcm32(wav_t wav)
 {
   if (!wav || wav->format == wav_pcm32)
     return;
@@ -708,7 +708,7 @@ void wav_to_pcm32(WAV wav)
   wav->format = wav_pcm32;
 }
 
-void wav_to_float32(WAV wav)
+void wav_to_float32(wav_t wav)
 {
   if (!wav || wav->format == wav_float32)
     return;
@@ -748,7 +748,7 @@ void wav_to_float32(WAV wav)
 
 // -----------------------------------------------------------------------------
 
-WAV wav_loadf(const char *filename)
+wav_t wav_loadf(const char *filename)
 {
   FILE *file = fopen(filename, "rb");
   if (file == NULL)
@@ -773,12 +773,12 @@ WAV wav_loadf(const char *filename)
     fclose(file);
     return NULL;
   }
-  WAV wav = wav_loadb(len, data);
+  wav_t wav = wav_loadb(len, data);
   fclose(file);
   return wav;
 }
 
-bool wav_dumpf(const char *filename, const WAV wav)
+bool wav_dumpf(const char *filename, const wav_t wav)
 {
   FILE *file = fopen(filename, "wb");
   if (file == NULL)
@@ -795,15 +795,15 @@ bool wav_dumpf(const char *filename, const WAV wav)
 
 // -----------------------------------------------------------------------------
 
-WAV wav_loadb(size_t len, uint8_t *data)
+wav_t wav_loadb(size_t len, uint8_t *data)
 {
 
   if (len < 44)
   {
-    fprintf(stderr, "ERROR: WAV header too small\n");
+    fprintf(stderr, "ERROR: wav_t header too small\n");
     return NULL;
   }
-  WAV wav = malloc(sizeof(struct WAV));
+  wav_t wav = malloc(sizeof(struct wav_t));
 
   size_t i = 0;
   WAV_TESTBYTES("RIFF", 4, {
@@ -894,7 +894,7 @@ WAV wav_loadb(size_t len, uint8_t *data)
   WAV_FORMAT_X_LIST
 #undef X
   {
-    fprintf(stderr, "ERROR: WAV format '%s%u' suspected but not supported\n",
+    fprintf(stderr, "ERROR: wav_t format '%s%u' suspected but not supported\n",
             &WAVFORMATTYPE_names[audioFormat][4], bitsPerSample);
     goto error;
   }
@@ -938,7 +938,7 @@ error:
   return NULL;
 }
 
-uint8_t *wav_dumpb(const WAV wav, size_t *len)
+uint8_t *wav_dumpb(const wav_t wav, size_t *len)
 {
   uint32_t dataLength = 0;
   uint16_t audioFormat;
@@ -948,7 +948,7 @@ uint8_t *wav_dumpb(const WAV wav, size_t *len)
   switch (wav->format)
   {
     default:
-    fprintf(stderr, "ERROR: Invalid WAV format\n");
+    fprintf(stderr, "ERROR: Invalid wav_t format\n");
     goto error;
 #define X(NAME, TYPE, FORMAT, ENCODED, OUTTYPE)                                \
   case wav_##NAME:                                                             \
@@ -1180,7 +1180,7 @@ void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
 
 // -----------------------------------------------------------------------------
 
-bool wav_play_async(const WAV wav)
+bool wav_play_async(const wav_t wav)
 {
   if (wav == NULL)
   {
@@ -1205,7 +1205,7 @@ bool wav_play_async(const WAV wav)
   return true;
 }
 
-bool wav_play(const WAV wav)
+bool wav_play(const wav_t wav)
 {
   bool playing = wav_play_async(wav);
   if (playing)
@@ -1217,13 +1217,13 @@ bool wav_play(const WAV wav)
 
 // -----------------------------------------------------------------------------
 
-void wav_free(WAV wav)
+void wav_free(wav_t wav)
 {
   (void) wav;
   switch (wav->format)
   {
     default:
-    fprintf(stderr, "ERROR: Unknown WAV format\n");
+    fprintf(stderr, "ERROR: Unknown wav_t format\n");
     return;
 #define X(NAME, TYPE, FORMAT, ENCODED, OUTTYPE)                                \
   case wav_##NAME:                                                             \

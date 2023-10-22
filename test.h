@@ -68,8 +68,8 @@
 
 // log a command
 #ifndef log_cmd
-#define log_cmd(CMD, ARGS)                                                     \
-  _log_full(stdout, _Col(Ping) ">", _Col(Ping) "%s" _Col(0) " %s", CMD, ARGS)
+#define log_cmd(CMD, args_t)                                                   \
+  _log_full(stdout, _Col(Ping) ">", _Col(Ping) "%s" _Col(0) " %s", CMD, args_t)
 #endif
 
 // ---------------------------------------------------------------------------------------------------------------------

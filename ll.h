@@ -25,10 +25,10 @@ the implementation.
 
 ### Type Definitions
 
-- `LIBPTR`: Type representing a handle to a loaded shared library.
-- `LIBFPTR`: Type representing a pointer to a function loaded from a shared
+- `libptr_t`: Type representing a handle to a loaded shared library.
+- `libfptr_t`: Type representing a pointer to a function loaded from a shared
 library.
-- `LIBVFPTR`: Type representing a pointer to a function that retrieves a
+- `libvfptr_t`: Type representing a pointer to a function that retrieves a
 variable's value.
 
 ### Macros
@@ -97,15 +97,15 @@ extern "C" {
 #endif
 #include <Windows.h>
 #include <stdlib.h>
-typedef HMODULE LIBPTR;
-typedef FARPROC LIBFPTR;
-typedef void *(*LIBVFPTR)(void);
+typedef HMODULE libptr_t;
+typedef FARPROC libfptr_t;
+typedef void *(*libvfptr_t)(void);
 #else
 #define LL_LIB_EXT ".so"
 #include <dlfcn.h>
-typedef void *LIBPTR;
-typedef void *LIBFPTR;
-typedef void *(*LIBVFPTR)(void);
+typedef void *libptr_t;
+typedef void *libfptr_t;
+typedef void *(*libvfptr_t)(void);
 #endif
 
 #define LL_STR(X) LL_STR_IMPL(X)
@@ -122,7 +122,7 @@ typedef void *(*LIBVFPTR)(void);
 
 #define ll_lib(LibName, LibTarget, SymBlock)                                   \
   typedef struct SymBlock _ll_lib(LibName);                                    \
-  LIBPTR _ll_handle(LibName)    = 0;                                           \
+  libptr_t _ll_handle(LibName)  = 0;                                           \
   const char *_ll_path(LibName) = LL_STR(LibTarget) LL_LIB_EXT;                \
   _ll_lib(LibName) LibName      = {0};
 
@@ -130,11 +130,11 @@ typedef void *(*LIBVFPTR)(void);
 #define ll_func(FuncName, TReturn, ...) TReturn (*FuncName)(__VA_ARGS__)
 
 extern void _ll_load_err(const char *symtype, const char *lib);
-extern int _ll_load_lib(LIBPTR *handle, const char *lib, void *alt, ...);
-extern int _ll_has_func(LIBPTR *handle, const char *func);
-extern int _ll_load_func(LIBPTR *handle, const char *func, void **fptr,
+extern int _ll_load_lib(libptr_t *handle, const char *lib, void *alt, ...);
+extern int _ll_has_func(libptr_t *handle, const char *func);
+extern int _ll_load_func(libptr_t *handle, const char *func, void **fptr,
                          void **alt, ...);
-extern int _ll_close_lib(LIBPTR *handle);
+extern int _ll_close_lib(libptr_t *handle);
 
 #ifndef LL_STATIC
 #define LL_PICK_STATIC
@@ -234,9 +234,9 @@ void _ll_load_err(const char *symtype, const char *lib)
 
 #endif
 
-int _ll_load_lib(LIBPTR *handle, const char *lib, void *alt, ...)
+int _ll_load_lib(libptr_t *handle, const char *lib, void *alt, ...)
 {
-  LIBPTR result = ll_load_lib_impl(lib);
+  libptr_t result = ll_load_lib_impl(lib);
   if (result)
   {
     *handle = result;
@@ -250,14 +250,14 @@ int _ll_load_lib(LIBPTR *handle, const char *lib, void *alt, ...)
   return 0;
 }
 
-int _ll_has_func(LIBPTR *handle, const char *func)
+int _ll_has_func(libptr_t *handle, const char *func)
 {
   return ll_load_func_impl(*handle, func) != 0;
 }
 
-int _ll_load_var(LIBPTR *handle, const char *var, void **vptr, ...)
+int _ll_load_var(libptr_t *handle, const char *var, void **vptr, ...)
 {
-  LIBVFPTR result = (LIBVFPTR) ll_load_func_impl(*handle, var);
+  libvfptr_t result = (libvfptr_t) ll_load_func_impl(*handle, var);
   if (result)
   {
     *vptr = result();
@@ -267,10 +267,10 @@ int _ll_load_var(LIBPTR *handle, const char *var, void **vptr, ...)
   return 0;
 }
 
-int _ll_load_func(LIBPTR *handle, const char *func, void **fptr, void **alt,
+int _ll_load_func(libptr_t *handle, const char *func, void **fptr, void **alt,
                   ...)
 {
-  LIBFPTR result = ll_load_func_impl(*handle, func);
+  libfptr_t result = ll_load_func_impl(*handle, func);
   if (result)
   {
     *fptr = (void *) result;
@@ -284,7 +284,7 @@ int _ll_load_func(LIBPTR *handle, const char *func, void **fptr, void **alt,
   return 1;
 }
 
-int _ll_close_lib(LIBPTR *handle)
+int _ll_close_lib(libptr_t *handle)
 {
   return ll_close_lib_impl(*handle) != 0;
 }

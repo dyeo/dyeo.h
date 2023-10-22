@@ -111,12 +111,12 @@ typedef char *dirpath;
 #define _dirpath_fmt "%s"
 
 #define _ARGTYPE(TYPE) _##TYPE##_type
-typedef enum ARGTYPE
+typedef enum argtype_t
 {
 #define X(TYPE) _ARGTYPE(TYPE),
   ARGTYPES_X_LIST
 #undef X
-} ARGTYPE;
+} argtype_t;
 
 const char *_argtype_names[] = {
 #define X(TYPE) #TYPE,
@@ -132,10 +132,10 @@ const int _argtype_sizes[] = {
 
 // -----------------------------------------------------------------------------
 
-typedef struct ARG
+typedef struct arg_t
 {
   const char *name;
-  ARGTYPE type;
+  argtype_t type;
   const char *message;
   void *value;
   void *defaultValue;
@@ -144,43 +144,43 @@ typedef struct ARG
   bool isRequired;
   bool isSingleLetter;
   bool isPopped;
-} ARG;
+} arg_t;
 
-typedef struct ARGS
+typedef struct args_t
 {
   char *exe;
-  ARG args[ARGS_MAX_ARGC];
+  arg_t args[ARGS_MAX_ARGC];
   int argc;
   int argr;
-} *ARGS;
+} *args_t;
 
 // -----------------------------------------------------------------------------
 
 #define args_new() _args_new_impl()
 
-#define args_default(ARGS)                                                     \
+#define args_default(args_t)                                                     \
   do                                                                           \
   {                                                                            \
-    args_flag(ARGS, help, "Display this help message and exit");               \
+    args_flag(args_t, help, "Display this help message and exit");               \
   } while (0)
 
-#define _args_common(ARGS, NAME, TYPE, ISFLAG, ISPOPPED, ...)                  \
-  _args_arg_impl(ARGS, NAME, TYPE, ISFLAG, ISPOPPED, 0, ""__VA_ARGS__, 0, 0,   \
+#define _args_common(args_t, NAME, TYPE, ISFLAG, ISPOPPED, ...)                  \
+  _args_arg_impl(args_t, NAME, TYPE, ISFLAG, ISPOPPED, 0, ""__VA_ARGS__, 0, 0,   \
                  0, 0)
 
-#define args_arg(ARGS, NAME, TYPE, ...)                                        \
-  ((TYPE *) _args_common(ARGS, #NAME, _ARGTYPE(TYPE), false, false,            \
+#define args_arg(args_t, NAME, TYPE, ...)                                        \
+  ((TYPE *) _args_common(args_t, #NAME, _ARGTYPE(TYPE), false, false,            \
                          __VA_ARGS__))
 
-#define args_flag(ARGS, NAME, ...)                                             \
-  ((bool *) _args_common(ARGS, #NAME, _bool_type, true, false, __VA_ARGS__))
+#define args_flag(args_t, NAME, ...)                                             \
+  ((bool *) _args_common(args_t, #NAME, _bool_type, true, false, __VA_ARGS__))
 
-#define args_pop(ARGS, NAME, TYPE, ...)                                        \
-  ((TYPE *) _args_common(ARGS, #NAME, _ARGTYPE(TYPE), false, true, __VA_ARGS__))
+#define args_pop(args_t, NAME, TYPE, ...)                                        \
+  ((TYPE *) _args_common(args_t, #NAME, _ARGTYPE(TYPE), false, true, __VA_ARGS__))
 
-extern ARGS _args_new_impl();
+extern args_t _args_new_impl();
 
-extern void *_args_arg_impl(ARGS args, const char *name, ARGTYPE type,
+extern void *_args_arg_impl(args_t args, const char *name, argtype_t type,
                             bool isFlag, bool isPopped, int _, ...);
 
 extern bool _args_get_bool(char *value);
@@ -191,10 +191,10 @@ extern long _args_get_long(char *value);
 extern float _args_get_float(char *value);
 extern double _args_get_double(char *value);
 extern string _args_get_str(char *value);
-extern bool _args_set_value(ARG *arg, char *value);
+extern bool _args_set_value(arg_t *arg, char *value);
 
-extern void args_help(FILE *const stream, ARGS args);
-extern void _args_parse(ARGS args, int argc, char **argv);
+extern void args_help(FILE *const stream, args_t args);
+extern void _args_parse(args_t args, int argc, char **argv);
 
 #ifdef __cplusplus
 }
@@ -208,15 +208,15 @@ extern void _args_parse(ARGS args, int argc, char **argv);
 #ifndef _ARGS_C
 #define _ARGS_C
 
-ARGS _args_new_impl()
+args_t _args_new_impl()
 {
-  ARGS args  = (ARGS) malloc(sizeof(struct ARGS));
+  args_t args  = (args_t) malloc(sizeof(struct args_t));
   args->argc = 0;
-  memset(args->args, 0, sizeof(ARG) * ARGS_MAX_ARGC); // initialize to zero
+  memset(args->args, 0, sizeof(arg_t) * ARGS_MAX_ARGC); // initialize to zero
   return args;
 }
 
-void *_args_arg_impl(ARGS args, const char *name, ARGTYPE type, bool isFlag,
+void *_args_arg_impl(args_t args, const char *name, argtype_t type, bool isFlag,
                      bool isPopped, int _, ...)
 {
   va_list varg;
@@ -232,7 +232,7 @@ void *_args_arg_impl(ARGS args, const char *name, ARGTYPE type, bool isFlag,
   }
   int tlen = _argtype_sizes[type];
   args->args[args->argc] =
-    (ARG){name,  type,   message,    malloc(tlen),      (void *) defaultValue,
+    (arg_t){name,  type,   message,    malloc(tlen),      (void *) defaultValue,
           false, isFlag, isRequired, strlen(name) == 1, isPopped};
   *((void **) args->args[args->argc].value) = (void *) defaultValue;
   args->argc += 1;
@@ -312,7 +312,7 @@ dirpath _args_get_dirpath(char *value)
   return strdup(value); // Return a copy of the string
 }
 
-bool _args_set_value(ARG *a, char *xval)
+bool _args_set_value(arg_t *a, char *xval)
 {
   switch (a->type)
   {
@@ -332,7 +332,7 @@ bool _args_set_value(ARG *a, char *xval)
   }
 }
 
-void _arg_help(FILE *const s, ARG a)
+void _arg_help(FILE *const s, arg_t a)
 {
   fprintf(s, "    -%s", a.name);
   if (!a.isFlag)
@@ -366,13 +366,13 @@ void _arg_help(FILE *const s, ARG a)
   fprintf(s, "\n");
 }
 
-void args_help(FILE *const s, ARGS args)
+void args_help(FILE *const s, args_t args)
 {
   fprintf(s, "usage: %s", args->exe);
   bool singleLetter = false;
   for (int i = 0; i < args->argc; ++i)
   {
-    ARG a = args->args[i];
+    arg_t a = args->args[i];
     if (!a.isRequired)
     {
       continue;
@@ -394,7 +394,7 @@ void args_help(FILE *const s, ARGS args)
   fprintf(s, " [options]");
   for (int i = 0; i < args->argc; ++i)
   {
-    ARG a = args->args[i];
+    arg_t a = args->args[i];
     if (a.isPopped)
     {
       fprintf(s, " %s", a.name);
@@ -404,7 +404,7 @@ void args_help(FILE *const s, ARGS args)
   bool hasRequired = false;
   for (int i = 0; i < args->argc; ++i)
   {
-    ARG a = args->args[i];
+    arg_t a = args->args[i];
     if (!a.isRequired || a.isPopped)
     {
       continue;
@@ -419,7 +419,7 @@ void args_help(FILE *const s, ARGS args)
   bool hasOptions = false;
   for (int i = 0; i < args->argc; ++i)
   {
-    ARG a = args->args[i];
+    arg_t a = args->args[i];
     if (a.isRequired || a.isPopped)
     {
       continue;
@@ -434,7 +434,7 @@ void args_help(FILE *const s, ARGS args)
   bool hasPopped = false;
   for (int i = 0; i < args->argc; ++i)
   {
-    ARG a = args->args[i];
+    arg_t a = args->args[i];
     if (!a.isPopped)
     {
       continue;
@@ -448,15 +448,15 @@ void args_help(FILE *const s, ARGS args)
   }
 }
 
-#define args_parse(ARGS, ARGC, ARGV)                                           \
+#define args_parse(args_t, ARGC, ARGV)                                           \
   do                                                                           \
   {                                                                            \
-    _args_parse(ARGS, ARGC, ARGV);                                             \
-    (ARGC) -= (ARGS)->argr;                                                    \
-    (ARGV) += (ARGS)->argr - 1;                                                \
+    _args_parse(args_t, ARGC, ARGV);                                             \
+    (ARGC) -= (args_t)->argr;                                                    \
+    (ARGV) += (args_t)->argr - 1;                                                \
   } while (0)
 
-void _args_parse(ARGS args, int argc, char **argv)
+void _args_parse(args_t args, int argc, char **argv)
 {
   char *exe = strrchr(argv[0], ARGS_PATHSEP);
   exe       = exe ? exe + 1 : argv[0];
@@ -486,7 +486,7 @@ void _args_parse(ARGS args, int argc, char **argv)
       int arglen = strlen(arg);
       for (int j = 0; j < args->argc; ++j)
       {
-        ARG *a = &args->args[j];
+        arg_t *a = &args->args[j];
         if (!a->isSingleLetter && arg[0] == '-')
         {
           arg += 1;
@@ -539,7 +539,7 @@ void _args_parse(ARGS args, int argc, char **argv)
         int i = 0;
         for (int j = 0; j < args->argc; ++j)
         {
-          ARG *a = &(args->args)[j];
+          arg_t *a = &(args->args)[j];
           if (!a->isFlag && !a->isSingleLetter)
           {
             continue;
@@ -563,7 +563,7 @@ void _args_parse(ARGS args, int argc, char **argv)
   }
   for (int j = 0; j < args->argc; ++j)
   {
-    ARG a = args->args[j];
+    arg_t a = args->args[j];
     if (a.isRequired && !a.isUsed)
     {
       fprintf(stderr, "ERROR: Missing required argument '%s'\n", a.name);
@@ -575,7 +575,7 @@ void _args_parse(ARGS args, int argc, char **argv)
   {
     for (int j = 0; j < args->argc; ++j)
     {
-      ARG a = args->args[j];
+      arg_t a = args->args[j];
       if (a.isPopped)
       {
         _args_set_value(&a, argv[i]);
@@ -586,7 +586,7 @@ void _args_parse(ARGS args, int argc, char **argv)
   }
   for (int j = 0; j < args->argc; ++j)
   {
-    ARG a = args->args[j];
+    arg_t a = args->args[j];
     if (a.isPopped && !a.isUsed)
     {
       fprintf(stderr, "ERROR: Missing required argument '%s'\n", a.name);

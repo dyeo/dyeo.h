@@ -19,14 +19,29 @@ cp -r ../res res/
 declare -A TEST_ARGS
 TEST_ARGS["args"]="-something2=1 -a -c sine.wav"
 
-for APP in "$@"; do
-    clang "../tests/$APP.c" \
+set +xe
+if [[ "$1" == "ALL" ]]; then
+    APPS=()
+    for file in ../*.h; do
+        [ -f "$file" ] && APPS+=("$(basename "$file" .h)")
+    done
+else
+    APPS=("$@")
+fi
+
+set +x
+for APP in "${APPS[@]}"; do
+    cc="clang "../tests/$APP.c" \
         -Werror \
         -o "./$APP$EXT" \
-        $LIBRARIES
+        $LIBRARIES"
+    echo + $cc
+    eval $cc
     if [[ -n "${TEST_ARGS[$APP]}" ]]; then
-        ./"$APP$EXT" ${TEST_ARGS[$APP]}
+        exe="./"$APP$EXT" ${TEST_ARGS[$APP]}"
     else
-        ./"$APP$EXT"
+        exe="./"$APP$EXT""
     fi
+    echo + $exe
+    eval $exe
 done

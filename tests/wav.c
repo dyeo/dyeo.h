@@ -4,10 +4,8 @@
 
 #include <math.h>
 
-int16_t gen_440hz_sine(uint32_t channels,
-                       uint32_t sampleRate,
-                       uint32_t sampleCount,
-                       int32_t channelIndex,
+int16_t gen_440hz_sine(uint32_t channels, uint32_t sampleRate,
+                       uint32_t sampleCount, int32_t channelIndex,
                        int32_t sampleIndex)
 {
   (void) channels;
@@ -21,7 +19,7 @@ int16_t gen_440hz_sine(uint32_t channels,
 int main()
 {
   test_group(wav, {
-    WAV sine = wav_gen_pcm16(2, wav_44100hz, 44100 * 5, gen_440hz_sine);
+    wav_t sine = wav_gen_pcm16(2, wav_44100hz, 44100 * 5, gen_440hz_sine);
     test_true(sine != NULL);
     test_true(wav_play(sine));
     test_true(wav_dumpf("sine.wav", sine));
