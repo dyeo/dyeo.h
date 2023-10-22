@@ -241,12 +241,8 @@ bool udp_send(UDPSOCK sock, const BYTE *data, const size_t length)
     fprintf(stderr, "ERROR: Could not resolve address");
     return false;
   }
-  int result = sendto(sock->handle,
-                      (char *) data,
-                      length,
-                      0,
-                      (struct sockaddr *) &dest,
-                      sizeof(dest));
+  int result = sendto(sock->handle, (char *) data, length, 0,
+                      (struct sockaddr *) &dest, sizeof(dest));
   return result != UDP_ERROR;
 }
 
@@ -255,12 +251,8 @@ bool udp_recv(UDPSOCK sock, BYTE **outData, size_t *outLength)
   struct sockaddr_in sender;
   int senderLen = sizeof(sender);
   BYTE buffer[UDP_BUFFER_LENGTH];
-  int bytesReceived = recvfrom(sock->handle,
-                               (char *) buffer,
-                               *outLength,
-                               0,
-                               (struct sockaddr *) &sender,
-                               &senderLen);
+  int bytesReceived = recvfrom(sock->handle, (char *) buffer, *outLength, 0,
+                               (struct sockaddr *) &sender, &senderLen);
   if (bytesReceived <= 0)
   {
     return false;

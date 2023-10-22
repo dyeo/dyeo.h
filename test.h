@@ -69,10 +69,8 @@
 // log a command
 #ifndef log_cmd
 #define log_cmd(CMD, ARGS)                                                     \
-  _log_full(                                                                   \
-    stdout, _Col(Ping) ">", _Col(Ping) "%s" _Col(0) " %s", CMD, ARGS)
+  _log_full(stdout, _Col(Ping) ">", _Col(Ping) "%s" _Col(0) " %s", CMD, ARGS)
 #endif
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -209,8 +207,7 @@
       fprintf(stdout,                                                          \
               _Lit(Fail) _Col(Warn) #Expr _Col(Hint) " != " _PFmt(             \
                 TRes) " (" _PFmt(TRes) ")" _Col(0) "\n"_Col(Hint),             \
-              _PArg(TRes, _res),                                               \
-              _PArg(TRes, _expr));                                             \
+              _PArg(TRes, _res), _PArg(TRes, _expr));                          \
       _test_h_fails++;                                                         \
     }                                                                          \
     _test_h_level--;                                                           \
@@ -222,9 +219,8 @@
     size_t _test_h_passes_##Name = _test_h_passes,                             \
            _test_h_fails_##Name  = _test_h_fails;                              \
     _test_h_indent(stdout);                                                    \
-    fprintf(stdout,                                                            \
-            _Col(Ping) "[" #Name                                               \
-                       "]" _Col(0) " Running tests...\n" _Col(Hint));          \
+    fprintf(stdout, _Col(Ping) "[" #Name                                       \
+                               "]" _Col(0) " Running tests...\n" _Col(Hint));  \
     _test_h_level++;                                                           \
     {                                                                          \
       Block;                                                                   \

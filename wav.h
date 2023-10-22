@@ -226,10 +226,8 @@ extern int32_t wav_float32_to_pcm32(float sample);
 extern float wav_pcm16_to_float32(int16_t sample);
 extern float wav_pcm32_to_float32(int32_t sample);
 extern int16_t wav_adpcm4_to_pcm32(const uint8_t adpcm_sample,
-                                   int32_t *predictor,
-                                   int32_t *index);
-extern uint8_t wav_pcm16_to_adpcm4(const int16_t pcm_sample,
-                                   int32_t *predictor,
+                                   int32_t *predictor, int32_t *index);
+extern uint8_t wav_pcm16_to_adpcm4(const int16_t pcm_sample, int32_t *predictor,
                                    int32_t *index);
 
 // -----------------------------------------------------------------------------
@@ -271,18 +269,13 @@ typedef float (*wav_gen_float32_callback)(uint32_t channels,
                                           int32_t channelIndex,
                                           int32_t sampleIndex);
 
-wav_audio *wav_gen_pcm16(uint32_t channels,
-                         uint32_t sampleRate,
-                         uint32_t sampleCount,
-                         wav_gen_pcm16_callback callback);
+wav_audio *wav_gen_pcm16(uint32_t channels, uint32_t sampleRate,
+                         uint32_t sampleCount, wav_gen_pcm16_callback callback);
 
-wav_audio *wav_gen_pcm32(uint32_t channels,
-                         uint32_t sampleRate,
-                         uint32_t sampleCount,
-                         wav_gen_pcm32_callback callback);
+wav_audio *wav_gen_pcm32(uint32_t channels, uint32_t sampleRate,
+                         uint32_t sampleCount, wav_gen_pcm32_callback callback);
 
-wav_audio *wav_gen_float32(uint32_t channels,
-                           uint32_t sampleRate,
+wav_audio *wav_gen_float32(uint32_t channels, uint32_t sampleRate,
                            uint32_t sampleCount,
                            wav_gen_float32_callback callback);
 
@@ -300,8 +293,8 @@ wav_audio *wav_gen_float32(uint32_t channels,
 
 // -----------------------------------------------------------------------------
 
-#define WAV_INTERLEAVE(                                                        \
-  I_FRAMES, I_TYPE, O_FRAMES, O_TYPE, CHANNELS, FRAMECOUNT)                    \
+#define WAV_INTERLEAVE(I_FRAMES, I_TYPE, O_FRAMES, O_TYPE, CHANNELS,           \
+                       FRAMECOUNT)                                             \
   do                                                                           \
   {                                                                            \
     O_FRAMES = (O_TYPE *) malloc(sizeof(O_TYPE) * CHANNELS * FRAMECOUNT);      \
@@ -316,8 +309,8 @@ wav_audio *wav_gen_float32(uint32_t channels,
     }                                                                          \
   } while (0)
 
-#define WAV_DEINTERLEAVE(                                                      \
-  I_FRAMES, I_TYPE, O_FRAMES, O_TYPE, CHANNELS, FRAMECOUNT)                    \
+#define WAV_DEINTERLEAVE(I_FRAMES, I_TYPE, O_FRAMES, O_TYPE, CHANNELS,         \
+                         FRAMECOUNT)                                           \
   do                                                                           \
   {                                                                            \
     O_FRAMES = (O_TYPE **) malloc(sizeof(O_TYPE *) * CHANNELS);                \
@@ -438,8 +431,7 @@ const int32_t _wav_adpcm4_step_table[89] = {
 
 const int32_t _wav_adpcm4_index_adjust[8] = {-1, -1, -1, -1, 2, 4, 6, 8};
 
-int16_t wav_adpcm4_to_pcm32(const uint8_t adpcm_sample,
-                            int32_t *predictor,
+int16_t wav_adpcm4_to_pcm32(const uint8_t adpcm_sample, int32_t *predictor,
                             int32_t *index)
 {
   int32_t step = _wav_adpcm4_step_table[*index];
@@ -470,8 +462,7 @@ int16_t wav_adpcm4_to_pcm32(const uint8_t adpcm_sample,
   return (int16_t) *predictor;
 }
 
-uint8_t wav_pcm16_to_adpcm4(const int16_t pcm_sample,
-                            int32_t *predictor,
+uint8_t wav_pcm16_to_adpcm4(const int16_t pcm_sample, int32_t *predictor,
                             int32_t *index)
 {
   int32_t step         = _wav_adpcm4_step_table[*index];
@@ -518,8 +509,8 @@ int16_t *_wav_decode_adpcm4(const uint8_t *adpcm, size_t len, size_t *outlength)
   return pcm_buffer;
 }
 
-uint8_t *
-_wav_encode_adpcm4(const int16_t *pcm, size_t length, size_t *outlength)
+uint8_t *_wav_encode_adpcm4(const int16_t *pcm, size_t length,
+                            size_t *outlength)
 {
   *outlength            = length / 2;
   uint8_t *adpcm_buffer = (uint8_t *) malloc(*outlength);
@@ -542,10 +533,8 @@ _wav_encode_adpcm4(const int16_t *pcm, size_t length, size_t *outlength)
 
 // -----------------------------------------------------------------------------
 
-wav_audio *wav_gen_pcm16(uint32_t channels,
-                         uint32_t sampleRate,
-                         uint32_t sampleCount,
-                         wav_gen_pcm16_callback callback)
+wav_audio *wav_gen_pcm16(uint32_t channels, uint32_t sampleRate,
+                         uint32_t sampleCount, wav_gen_pcm16_callback callback)
 {
   if (channels == 0 || sampleRate == 0 || sampleCount == 0)
   {
@@ -575,10 +564,8 @@ wav_audio *wav_gen_pcm16(uint32_t channels,
   return wav;
 }
 
-wav_audio *wav_gen_pcm32(uint32_t channels,
-                         uint32_t sampleRate,
-                         uint32_t sampleCount,
-                         wav_gen_pcm32_callback callback)
+wav_audio *wav_gen_pcm32(uint32_t channels, uint32_t sampleRate,
+                         uint32_t sampleCount, wav_gen_pcm32_callback callback)
 {
   if (channels == 0 || sampleRate == 0 || sampleCount == 0)
   {
@@ -608,8 +595,7 @@ wav_audio *wav_gen_pcm32(uint32_t channels,
   return wav;
 }
 
-wav_audio *wav_gen_float32(uint32_t channels,
-                           uint32_t sampleRate,
+wav_audio *wav_gen_float32(uint32_t channels, uint32_t sampleRate,
                            uint32_t sampleCount,
                            wav_gen_float32_callback callback)
 {
@@ -830,8 +816,7 @@ wav_audio *wav_loadb(size_t len, uint8_t *data)
   WAV_POPVAL(fileSizeMinusEight);
   if (fileSizeMinusEight + 8 != len)
   {
-    fprintf(stderr,
-            "ERROR: Invalid chunk size '%u' (%lld)\n",
+    fprintf(stderr, "ERROR: Invalid chunk size '%u' (%lld)\n",
             fileSizeMinusEight,
             (ptrdiff_t) len - (ptrdiff_t) fileSizeMinusEight);
     goto error;
@@ -872,8 +857,8 @@ wav_audio *wav_loadb(size_t len, uint8_t *data)
     WAV_POPVAL(extraParamSize);
     if (extraParamSize != sizeof **(wav->adpcm4) * 16)
     {
-    fprintf(
-      stderr, "ERROR: Invalid ADPCM extra param size '%u'\n", extraParamSize);
+    fprintf(stderr, "ERROR: Invalid ADPCM extra param size '%u'\n",
+            extraParamSize);
     goto error;
     }
     uint16_t adpcmSamplesPerBlock = 0;
@@ -911,10 +896,8 @@ wav_audio *wav_loadb(size_t len, uint8_t *data)
   WAV_FORMAT_X_LIST
 #undef X
   {
-    fprintf(stderr,
-            "ERROR: WAV format '%s%u' suspected but not supported\n",
-            &wav_audioformat_names[audioFormat][4],
-            bitsPerSample);
+    fprintf(stderr, "ERROR: WAV format '%s%u' suspected but not supported\n",
+            &wav_audioformat_names[audioFormat][4], bitsPerSample);
     goto error;
   }
 
@@ -941,8 +924,8 @@ wav_audio *wav_loadb(size_t len, uint8_t *data)
     raw              = decoded;                                                \
     wav->sampleCount = dlen;                                                   \
     }                                                                          \
-    WAV_DEINTERLEAVE(                                                          \
-      raw, OUTTYPE, wav->NAME, TYPE, wav->channels, wav->sampleCount);         \
+    WAV_DEINTERLEAVE(raw, OUTTYPE, wav->NAME, TYPE, wav->channels,             \
+                     wav->sampleCount);                                        \
     free(raw);                                                                 \
     break;                                                                     \
   }
@@ -1040,8 +1023,8 @@ uint8_t *wav_dumpb(const wav_audio *wav, size_t *len)
   case wav_##NAME:                                                             \
   {                                                                            \
     OUTTYPE *raw = NULL;                                                       \
-    WAV_INTERLEAVE(                                                            \
-      wav->NAME, TYPE, raw, OUTTYPE, wav->channels, wav->sampleCount);         \
+    WAV_INTERLEAVE(wav->NAME, TYPE, raw, OUTTYPE, wav->channels,               \
+                   wav->sampleCount);                                          \
     if (ENCODED)                                                               \
     {                                                                          \
     size_t dlen      = 0;                                                      \
@@ -1085,11 +1068,8 @@ static HGLOBAL _wav_win32_h_header;
 static WAVEHDR _wav_win32_header;
 static HWAVEOUT _wav_win32_h_wav_out;
 
-void CALLBACK _pcm_out_win32(HWAVEOUT hwo,
-                             UINT uMsg,
-                             DWORD_PTR dwInstance,
-                             DWORD_PTR dwParam1,
-                             DWORD_PTR dwParam2)
+void CALLBACK _pcm_out_win32(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance,
+                             DWORD_PTR dwParam1, DWORD_PTR dwParam2)
 {
   (void) hwo;
   (void) dwInstance;
@@ -1097,19 +1077,15 @@ void CALLBACK _pcm_out_win32(HWAVEOUT hwo,
   (void) dwParam2;
   if (uMsg == WOM_DONE)
   {
-    waveOutUnprepareHeader(
-      _wav_win32_h_wav_out, &_wav_win32_header, sizeof(WAVEHDR));
+    waveOutUnprepareHeader(_wav_win32_h_wav_out, &_wav_win32_header,
+                           sizeof(WAVEHDR));
     GlobalFree(_wav_win32_h_header);
     waveOutClose(_wav_win32_h_wav_out);
   }
 }
 
-void _wav_play_pcm(uint16_t format,
-                   uint16_t channels,
-                   uint32_t sampleRate,
-                   uint32_t sampleCount,
-                   uint16_t bitDepth,
-                   char *data)
+void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
+                   uint32_t sampleCount, uint16_t bitDepth, char *data)
 {
   WAVEFORMATEX wfx;
   uint64_t bufferLength = sampleCount * channels * (bitDepth / 8);
@@ -1120,11 +1096,8 @@ void _wav_play_pcm(uint16_t format,
   wfx.nBlockAlign       = (channels * bitDepth) / 8;
   wfx.nAvgBytesPerSec   = wfx.nSamplesPerSec * wfx.nBlockAlign;
   wfx.cbSize            = 0;
-  if (waveOutOpen(&_wav_win32_h_wav_out,
-                  WAVE_MAPPER,
-                  &wfx,
-                  (DWORD_PTR) _pcm_out_win32,
-                  0,
+  if (waveOutOpen(&_wav_win32_h_wav_out, WAVE_MAPPER, &wfx,
+                  (DWORD_PTR) _pcm_out_win32, 0,
                   CALLBACK_FUNCTION) != MMSYSERR_NOERROR)
   {
     printf("ERROR: Failed to open wave out device\n");
@@ -1134,8 +1107,8 @@ void _wav_play_pcm(uint16_t format,
     GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(WAVEHDR));
   _wav_win32_header.lpData         = data;
   _wav_win32_header.dwBufferLength = bufferLength;
-  waveOutPrepareHeader(
-    _wav_win32_h_wav_out, &_wav_win32_header, sizeof(WAVEHDR));
+  waveOutPrepareHeader(_wav_win32_h_wav_out, &_wav_win32_header,
+                       sizeof(WAVEHDR));
   waveOutWrite(_wav_win32_h_wav_out, &_wav_win32_header, sizeof(WAVEHDR));
 }
 
@@ -1145,17 +1118,13 @@ static snd_pcm_t *_wav_linux_pcm_handle;
 static snd_pcm_uframes_t _wav_linux_frames;
 static char *_wav_linux_playbuf;
 
-void _wav_play_pcm(uint16_t format,
-                   uint16_t channels,
-                   uint32_t sampleRate,
-                   uint32_t sampleCount,
-                   uint16_t bitDepth,
-                   char *data)
+void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
+                   uint32_t sampleCount, uint16_t bitDepth, char *data)
 {
   int err;
   snd_pcm_hw_params_t *params;
-  if ((err = snd_pcm_open(
-         &_wav_linux_pcm_handle, "default", SND_PCM_STREAM_PLAYBACK, 0)) < 0)
+  if ((err = snd_pcm_open(&_wav_linux_pcm_handle, "default",
+                          SND_PCM_STREAM_PLAYBACK, 0)) < 0)
   {
     fprintf(stderr, "ERROR: Cannot open PCM device: %s\n", snd_strerror(err));
     return;
@@ -1164,26 +1133,26 @@ void _wav_play_pcm(uint16_t format,
   snd_pcm_hw_params_any(_wav_linux_pcm_handle, params);
   if (format == wav_float)
   {
-    snd_pcm_hw_params_set_format(
-      _wav_linux_pcm_handle, params, SND_PCM_FORMAT_FLOAT_LE);
+    snd_pcm_hw_params_set_format(_wav_linux_pcm_handle, params,
+                                 SND_PCM_FORMAT_FLOAT_LE);
   }
   else
   {
     if (bitDepth == 16)
     {
-    snd_pcm_hw_params_set_format(
-      _wav_linux_pcm_handle, params, SND_PCM_FORMAT_S16_LE);
+    snd_pcm_hw_params_set_format(_wav_linux_pcm_handle, params,
+                                 SND_PCM_FORMAT_S16_LE);
     }
     else if (bitDepth == 32)
     {
-    snd_pcm_hw_params_set_format(
-      _wav_linux_pcm_handle, params, SND_PCM_FORMAT_S32_LE);
+    snd_pcm_hw_params_set_format(_wav_linux_pcm_handle, params,
+                                 SND_PCM_FORMAT_S32_LE);
     }
   }
   snd_pcm_hw_params_set_channels(_wav_linux_pcm_handle, params, channels);
   unsigned int sampleRate = sampleRate;
-  snd_pcm_hw_params_set_rate_near(
-    _wav_linux_pcm_handle, params, &sampleRate, NULL);
+  snd_pcm_hw_params_set_rate_near(_wav_linux_pcm_handle, params, &sampleRate,
+                                  NULL);
   snd_pcm_hw_params(_wav_linux_pcm_handle, params);
   snd_pcm_hw_params_get_period_size(params, &_wav_linux_frames, NULL);
   _wav_linux_playbuf = (char *) malloc(_wav_linux_frames * 2);
@@ -1227,11 +1196,8 @@ bool wav_play_async(const wav_audio *wav)
 #define X(NAME, TYPE, FORMAT, ENCODED, OUTTYPE)                                \
   case wav_##NAME:                                                             \
   {                                                                            \
-    _wav_play_pcm(wav_format_lookup[wav_##NAME],                               \
-                  wav->channels,                                               \
-                  wav->sampleRate,                                             \
-                  wav->sampleCount,                                            \
-                  sizeof **(wav->NAME) * 8,                                    \
+    _wav_play_pcm(wav_format_lookup[wav_##NAME], wav->channels,                \
+                  wav->sampleRate, wav->sampleCount, sizeof **(wav->NAME) * 8, \
                   (char *) wav->NAME);                                         \
     break;                                                                     \
   }

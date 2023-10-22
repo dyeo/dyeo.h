@@ -12,21 +12,21 @@ and maintain asynchronous logic.
 
 ### Enums and Typedefs
 
-- `cor_status_t`:
+- `CORSTATUS`:
   - An enumeration representing the status of a coroutine's execution.
   - Values:
     - `cor_yielded`: The coroutine yielded execution.
     - `cor_success`: The coroutine completed successfully.
     - `cor_failure`: The coroutine completed with a failure.
 
-- `cor_state_t`:
+- `CORSTATE`:
   - A struct that maintains the state of a coroutine, including its yield point
 and the number of runs.
 
-- `cor_result_t`:
+- `CORRESULT`:
   - A struct representing the result of a coroutine's execution.
   - Fields:
-    - `cor_status_t status`: Status of the coroutine's execution.
+    - `CORSTATUS status`: Status of the coroutine's execution.
     - `size_t yield`: Current yield point.
     - `void *result`: Pointer to the result data.
 
@@ -102,25 +102,25 @@ typedef enum
   cor_yielded,
   cor_success,
   cor_failure
-} cor_status_t;
+} CORSTATUS;
 
 typedef struct
 {
   size_t yield;
   size_t runs;
-} cor_state_t;
+} CORSTATE;
 
 typedef struct
 {
-  cor_status_t status;
+  CORSTATUS status;
   size_t yield;
   void *result;
-} cor_result_t;
+} CORRESULT;
 
 #define core_state_n_t(InnerStruct)                                            \
   struct                                                                       \
   {                                                                            \
-    cor_state_t state;                                                         \
+    CORSTATE state;                                                         \
     struct InnerStruct;                                                        \
   }
 
@@ -153,7 +153,7 @@ typedef struct
   {                                                                            \
     if ((Condition))                                                           \
     {                                                                          \
-      cor_result_t cor_result = {                                              \
+      CORRESULT cor_result = {                                              \
         cor_yielded, (size_t) (StateVal), (void *) (Result)};                  \
       return cor_result;                                                       \
     }                                                                          \
@@ -166,7 +166,7 @@ typedef struct
   do                                                                           \
   {                                                                            \
     __VA_ARGS__;                                                               \
-    cor_result_t cor_result = {cor_success, 0llu, (void *) (Result)};          \
+    CORRESULT cor_result = {cor_success, 0llu, (void *) (Result)};          \
     return cor_result;                                                         \
   } while (0)
 
@@ -175,7 +175,7 @@ typedef struct
   do                                                                           \
   {                                                                            \
     __VA_ARGS__;                                                               \
-    cor_result_t cor_result = {cor_failure, 0llu, (void *) (Result)};          \
+    CORRESULT cor_result = {cor_failure, 0llu, (void *) (Result)};          \
     return cor_result;                                                         \
   } while (0)
 
@@ -190,8 +190,8 @@ typedef struct
 
 #define cor_t(CorName) cor_##CorName##_state_t
 
-static inline cor_result_t _cor_apply_result(cor_state_t *state,
-                                             cor_result_t result)
+static inline CORRESULT _cor_apply_result(CORSTATE *state,
+                                             CORRESULT result)
 {
   if (result.status != cor_yielded)
   {
@@ -206,7 +206,7 @@ static inline cor_result_t _cor_apply_result(cor_state_t *state,
 #define _cor_runsync_impl(CorPtr, CorT, CorCall)                               \
   do                                                                           \
   {                                                                            \
-    cor_result_t cor_result;                                                   \
+    CORRESULT cor_result;                                                   \
     do                                                                         \
     {                                                                          \
       cor_result = CorCall(CorPtr, CorT);                                      \
@@ -220,37 +220,37 @@ static inline cor_result_t _cor_apply_result(cor_state_t *state,
 
 #define cor_0_t(CorName, T0)                                                   \
   typedef core_state_n_t({}) cor_t(CorName);                                   \
-  typedef cor_result_t (*cor_##CorName##_fptr_t)(const cor_state_t *cor_state)
+  typedef CORRESULT (*cor_##CorName##_fptr_t)(const CORSTATE *cor_state)
 #define cor_0_call_impl(CorName, CorT) ((CorPtr) CorName(&((CorT).state)))
 #define cor_0_call(CorName, CorT) _cor_call_impl(CorName, CorT, cor_0_call_impl)
 #define cor_0_runs(CorPtr, CorT) _cor_runsync_impl(CorPtr, CorT, cor_0_call)
-#define cor_0_fptr(CorName) cor_result_t CorName(const cor_state_t *cor_state)
+#define cor_0_fptr(CorName) CORRESULT CorName(const CORSTATE *cor_state)
 #define cor_0_func(CorName)                                                    \
-  cor_result_t (*CorName)(const cor_state_t *cor_state)
+  CORRESULT (*CorName)(const CORSTATE *cor_state)
 
 #define cor_1_t(CorName, T0)                                                   \
   typedef core_state_n_t({ T0 arg0; }) cor_t(CorName);                         \
-  typedef cor_result_t (*cor_##CorName##_fptr_t)(const cor_state_t *cor_state, \
+  typedef CORRESULT (*cor_##CorName##_fptr_t)(const CORSTATE *cor_state, \
                                                  T0 arg0)
 #define cor_1_call_impl(CorPtr, CorT) ((CorPtr) (&((CorT).state), (CorT).arg0))
 #define cor_1_call(CorName, CorT) _cor_call_impl(CorName, CorT, cor_1_call_impl)
 #define cor_1_runs(CorPtr, CorT) _cor_runsync_impl(CorPtr, CorT, cor_1_call)
 #define cor_1_func(CorName, T0)                                                \
-  cor_result_t(CorName)(const cor_state_t *cor_state, T0 arg0)
+  CORRESULT(CorName)(const CORSTATE *cor_state, T0 arg0)
 
 #define cor_2_t(CorName, T0, T1)                                               \
   typedef core_state_n_t({                                                     \
     T0 arg0;                                                                   \
     T1 arg1;                                                                   \
   }) cor_t(CorName);                                                           \
-  typedef cor_result_t (*cor_##CorName##_fptr_t)(                              \
-    const cor_state_t *cor_state, T0 arg0, T1 arg1)
+  typedef CORRESULT (*cor_##CorName##_fptr_t)(                              \
+    const CORSTATE *cor_state, T0 arg0, T1 arg1)
 #define cor_2_call_impl(CorPtr, CorT)                                          \
   ((CorPtr) (&((CorT).state), (CorT).arg0, (CorT).arg1))
 #define cor_2_call(CorPtr, CorT) _cor_call_impl(CorName, CorT, cor_2_call_impl)
 #define cor_2_runs(CorPtr, CorT) _cor_runsync_impl(CorPtr, CorT, cor_2_call)
 #define cor_2_func(CorName, T0, T1)                                            \
-  cor_result_t(CorName)(const cor_state_t *cor_state, T0 arg0, T1 arg1)
+  CORRESULT(CorName)(const CORSTATE *cor_state, T0 arg0, T1 arg1)
 
 #define cor_3_t(CorName, T0, T1, T2)                                           \
   typedef core_state_n_t({                                                     \
@@ -258,14 +258,14 @@ static inline cor_result_t _cor_apply_result(cor_state_t *state,
     T1 arg1;                                                                   \
     T2 arg2;                                                                   \
   }) cor_t(CorName);                                                           \
-  typedef cor_result_t (*cor_##CorName##_fptr_t)(                              \
-    const cor_state_t *cor_state, T0 arg0, T1 arg1, T2 arg2)
+  typedef CORRESULT (*cor_##CorName##_fptr_t)(                              \
+    const CORSTATE *cor_state, T0 arg0, T1 arg1, T2 arg2)
 #define cor_3_call_impl(CorPtr, CorT)                                          \
   ((CorPtr) (&((CorT).state), (CorT).arg0, (CorT).arg1, (CorT).arg2))
 #define cor_3_call(CorPtr, CorT) _cor_call_impl(CorName, CorT, cor_3_call_impl)
 #define cor_3_runs(CorPtr, CorT) _cor_runsync_impl(CorPtr, CorT, cor_3_call)
 #define cor_3_func(CorName, T0, T1, T2)                                        \
-  cor_result_t(CorName)(const cor_state_t *cor_state, T0 arg0, T1 arg1, T2 arg2)
+  CORRESULT(CorName)(const CORSTATE *cor_state, T0 arg0, T1 arg1, T2 arg2)
 
 #define cor_4_t(CorName, T0, T1, T2, T3)                                       \
   typedef core_state_n_t({                                                     \
@@ -274,8 +274,8 @@ static inline cor_result_t _cor_apply_result(cor_state_t *state,
     T2 arg2;                                                                   \
     T3 arg3;                                                                   \
   })                                                                           \
-    cor_t(CorName) typedef cor_result_t (*cor_##CorName##_fptr_t)(             \
-      const cor_state_t *cor_state, T0 arg0, T1 arg1, T2 arg2, T3 arg3)
+    cor_t(CorName) typedef CORRESULT (*cor_##CorName##_fptr_t)(             \
+      const CORSTATE *cor_state, T0 arg0, T1 arg1, T2 arg2, T3 arg3)
 #define cor_4_call_impl(CorPtr, CorT)                                          \
   ((CorPtr) (&((CorT).state),                                                  \
              (CorT).arg0,                                                      \
@@ -285,8 +285,8 @@ static inline cor_result_t _cor_apply_result(cor_state_t *state,
 #define cor_4_call(CorPtr, CorT) _cor_call_impl(CorName, CorT, cor_4_call_impl)
 #define cor_4_runs(CorPtr, CorT) _cor_runsync_impl(CorPtr, CorT, cor_4_call)
 #define cor_4_func(CorName, T0, T1, T2, T3)                                    \
-  cor_result_t(CorName)(                                                       \
-    const cor_state_t *cor_state, T0 arg0, T1 arg1, T2 arg2, T3 arg3)
+  CORRESULT(CorName)(                                                       \
+    const CORSTATE *cor_state, T0 arg0, T1 arg1, T2 arg2, T3 arg3)
 
 #ifdef __cplusplus
 }
