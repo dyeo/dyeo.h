@@ -1,20 +1,18 @@
+#define ARGS_IMPLEMENTATION
 #include "../args.h"
-#include "../test.h"
 
 int main(int argc, char **argv)
 {
-  args_default();
-  args_flag(a, "Some cool flag named a");
-  args_flag(b, "A less cool flag named b");
-  args_flag(something, "A named flag");
-  args_var(something2, int, "A named int val");
-  args_pop(test, int, "This should be first popped off");
-  args_pop(test2, int, "This won't be popped off and will fail");
-  if (false)
-  {
-    args_pop(test3, int, "This won't be popped off because it's excluded");
-    args_pop(test4, int, "This won't be popped off because it's excluded");
-  }
-  args_parse(argc, argv);
-  args_popend(argc, argv);
+  ARGS args = args_new();
+  args_default(args);
+  bool *a         = args_flag(args, a, "Some cool flag named a", true, false);
+  bool *b         = args_flag(args, b, "A less cool flag named b");
+  filepath *c     = args_arg(args, c, filepath, "A less cool flag named b");
+  bool *something = args_flag(args, something, "A named flag");
+  int *something2 = args_arg(args, something2, int, "A named int val");
+  int *test = args_pop(args, test, int, "This should be first popped off");
+  int *test2 =
+    args_pop(args, test2, int, "This won't be popped off and will fail");
+  args_parse(args, argc, argv);
+  args_help(stdout, args);
 }

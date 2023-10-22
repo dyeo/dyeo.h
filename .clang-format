@@ -25,8 +25,8 @@ AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: true
 AlwaysBreakTemplateDeclarations: MultiLine
-BinPackArguments: false
-BinPackParameters: false
+BinPackArguments: true
+BinPackParameters: true
 BraceWrapping:
   AfterCaseLabel: true
   AfterClass: true

@@ -17,7 +17,7 @@ into. This kind of flag's value is set by providing the flag itself.
 - `args_parse(Argc, Argv):` Parses out the arguments.
 - `args_pop(Name, Type, [Message], [Default])`: Pops an argument off after
 parsing the options. These are required.
-- `args_printhelp(FILE *const)`: Prints the help message to the specified
+- `args_help(FILE *const)`: Prints the help message to the specified
 stream.
 
 ## Notes
@@ -27,7 +27,7 @@ for you, if the name is "help", and it's a bool flag set to `true`.
 - This supports -flag value and -flag=value syntax
 - Compound single-letter flags like -abc are supported as long as all of the
 single-letter flags exist. Else, the whole flag will be treated as invalid.
-- `args_printhelp` is based off of the existing values. If you call it before
+- `args_help` is based off of the existing values. If you call it before
 `args_pop`, which can be called after `args_parse`, then it will not contain
 those arguments.
 */
@@ -45,11 +45,11 @@ extern "C" {
 #ifdef _WIN32
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
-#define ARG_PATHSEP '\\'
+#define ARGS_PATHSEP '\\'
 #endif
 #define strdup _strdup
 #else
-#define ARG_PATHSEP '/'
+#define ARGS_PATHSEP '/'
 #endif
 
 #include <ctype.h>
@@ -58,6 +58,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #ifdef _WIN32
 const bool __args_win32 = true;
@@ -72,11 +73,16 @@ const bool __args_posix = true;
 typedef _Bool bool;
 #endif
 
-#ifndef str
-typedef char *str;
+#ifndef string
+typedef char *string;
 #endif
 
-#define ARGVAR(TYPE, VAR) TYPE VAR
+typedef char *filepath;
+typedef char *dirpath;
+
+#ifndef ARGTYPES_X_LIST_CUSTOM
+#define ARGTYPES_X_LIST_CUSTOM
+#endif
 
 #define ARGTYPES_X_LIST                                                        \
   X(bool)                                                                      \
@@ -86,390 +92,504 @@ typedef char *str;
   X(long)                                                                      \
   X(float)                                                                     \
   X(double)                                                                    \
-  X(str)
+  X(string)                                                                    \
+  X(filepath)                                                                  \
+  X(dirpath)                                                                   \
+  ARGTYPES_X_LIST_CUSTOM
 
-typedef enum argtype
+#define _bool_fmt "%x"
+#define _char_fmt "%c"
+#define _short_fmt "%d"
+#define _int_fmt "%d"
+#define _long_fmt "%ld"
+#define _float_fmt "%g"
+#define _double_fmt "%g"
+#define _string_fmt "%s"
+#define _filepath_fmt "%s"
+#define _dirpath_fmt "%s"
+
+typedef enum ARGTYPE
 {
 #define X(TYPE) TYPE##arg,
   ARGTYPES_X_LIST
 #undef X
-} argtype;
+} ARGTYPE;
 
-const char *argtypenames[] = {
+const char *_argtype_names[] = {
 #define X(TYPE) #TYPE,
   ARGTYPES_X_LIST
 #undef X
 };
 
-typedef struct TYPEARG
-{
-  const char *name; // argument flags/name
-  argtype type;     // argument messages
-  const char *mesg; // argument messages
-  void **var;       // argument variables (from macro)
-  void *def;        // argument defaults (from macro)
-  bool used;        // argument accessed
-  bool flag;        // argument is flag
-  bool reqd;        // argument is required
-  bool sing;        // single-letter
-} TYPEARG;
-
-char *__exename; // executable name
-static TYPEARG __args[ARGS_MAX_ARGC];
-int __argscount;
-static TYPEARG __argp[ARGS_MAX_ARGC];
-int __argpcount;
-int __argc;
-
-static inline bool arggetboolarg(char *arg)
-{
-  if (!arg)
-  {
-    return false;
-  }
-  for (int i = 0; arg[i]; i++)
-  {
-    arg[i] = tolower((unsigned char) arg[i]);
-  }
-  return strcmp(arg, "yes") == 0 || strcmp(arg, "true") == 0 ||
-         strcmp(arg, "okay") == 0 || strcmp(arg, "ok") == 0 ||
-         strcmp(arg, "y") == 0 || strcmp(arg, "t") == 0 ||
-         strcmp(arg, "1") == 0;
-}
-
-static inline char arggetchararg(char *arg)
-{
-  return arg ? arg[0] : 0;
-}
-
-static inline short arggetshortarg(char *arg)
-{
-  return (short) atoi(arg);
-}
-
-static inline int arggetintarg(char *arg)
-{
-  return atoi(arg);
-}
-
-static inline long arggetlongarg(char *arg)
-{
-  return atol(arg);
-}
-
-static inline float arggetfloatarg(char *arg)
-{
-  return (float) atof(arg);
-}
-
-static inline double arggetdoublearg(char *arg)
-{
-  return atof(arg);
-}
-
-static inline str arggetstrarg(char *arg)
-{
-  return arg;
-}
-
-static inline void argsetdef(void **var, void *def)
-{
-  *var = def;
-}
-
-static inline void argsetvar(void **var, argtype type, char *arg)
-{
-  switch (type)
-  {
-#define X(TYPE)                                                                \
-  case TYPE##arg:                                                              \
-    *((TYPE *) var) = argget##TYPE##arg(arg);                                  \
-    break;
-    ARGTYPES_X_LIST
+const int _argtype_sizes[] = {
+#define X(TYPE) sizeof(TYPE),
+  ARGTYPES_X_LIST
 #undef X
-    default:
-      break;
-  }
-}
+};
 
-static inline void args_printhelp(FILE *const stream)
+// -----------------------------------------------------------------------------
+
+typedef struct ARG
 {
-  fprintf(stream, "usage: %s", __exename);
-  for (int i = 0; i < __argscount; ++i)
-  {
-    if (!__args[i].reqd)
-    {
-      continue;
-    }
-    fprintf(stream, " -%s", __args[i].name);
-    if (!__args[i].flag)
-    {
-      fprintf(stream, " (%s)", argtypenames[__args[i].type]);
-    }
-  }
-  fprintf(stream, " [options]");
-  for (int i = 0; i < __argpcount; ++i)
-  {
-    fprintf(stream, " %s", __argp[i].name);
-  }
-  fprintf(stream, " ...\n");
-  fprintf(stream, "  required:\n");
-  for (int i = 0; i < __argscount; ++i)
-  {
-    if (!__args[i].reqd)
-    {
-      continue;
-    }
-    fprintf(stream, "    -%s", __args[i].name);
-    if (!__args[i].flag)
-    {
-      fprintf(stream, " (%s)", argtypenames[__args[i].type]);
-    }
-    if (__args[i].mesg)
-    {
-      fprintf(stream, ": %s", __args[i].mesg);
-    }
-    fprintf(stream, "\n");
-  }
-  for (int i = 0; i < __argpcount; ++i)
-  {
-    if (!__argp[i].reqd)
-    {
-      continue;
-    }
-    fprintf(stream, "    -%s", __argp[i].name);
-    if (!__argp[i].flag)
-    {
-      fprintf(stream, " (%s)", argtypenames[__argp[i].type]);
-    }
-    if (__argp[i].mesg)
-    {
-      fprintf(stream, ": %s", __argp[i].mesg);
-    }
-    fprintf(stream, "\n");
-  }
-  fprintf(stream, "  options:\n");
-  for (int i = 0; i < __argscount; ++i)
-  {
-    if (__args[i].reqd)
-    {
-      continue;
-    }
-    fprintf(stream, "    -%s", __args[i].name);
-    if (!__args[i].flag)
-    {
-      fprintf(stream, " (%s)", argtypenames[__args[i].type]);
-    }
-    if (__args[i].mesg)
-    {
-      fprintf(stream, ": %s", __args[i].mesg);
-    }
-    fprintf(stream, "\n");
-  }
-}
+  const char *name;
+  ARGTYPE type;
+  const char *message;
+  void *value;
+  void *defaultValue;
+  bool isUsed;
+  bool isFlag;
+  bool isRequired;
+  bool isSingleLetter;
+  bool isPopped;
+} ARG;
 
-#define args_default() args_flag(help, "Show this help message and quit", true)
+typedef struct ARGS
+{
+  char *exe;
+  ARG args[ARGS_MAX_ARGC];
+  int argc;
+  int argr;
+} *ARGS;
 
-#define args_var(...) _args_var(__VA_ARGS__, NULL, NULL)
-#define _args_var(VAR, TYPE, MESSAGE, DEFAULT, ...)                            \
-  const int __arg_##VAR##_i = __argscount;                                     \
-  TYPE VAR;                                                                    \
+// -----------------------------------------------------------------------------
+
+#define args_new() _args_new_impl()
+
+#define args_default(ARGS)                                                     \
   do                                                                           \
   {                                                                            \
-    __args[__arg_##VAR##_i].name = #VAR;                                       \
-    __args[__arg_##VAR##_i].type = TYPE##arg;                                  \
-    __args[__arg_##VAR##_i].mesg = MESSAGE;                                    \
-    __args[__arg_##VAR##_i].var  = (void *) &(VAR);                            \
-    __args[__arg_##VAR##_i].def  = (void *) DEFAULT;                           \
-    __args[__arg_##VAR##_i].used = false;                                      \
-    __args[__arg_##VAR##_i].flag = false;                                      \
-    __args[__arg_##VAR##_i].reqd = false;                                      \
-    __args[__arg_##VAR##_i].sing = strlen(#VAR) == 1;                          \
-    __argscount++;                                                             \
+    args_flag(ARGS, help, "Display this help message and exit");               \
   } while (0)
 
-#define args_flag(VAR, ...)                                                    \
-  args_var(VAR, bool, __VA_ARGS__, NULL, NULL);                                \
-  do                                                                           \
-  {                                                                            \
-    __args[__arg_##VAR##_i].flag = true;                                       \
-  } while (0)
+#define _args_common(ARGS, NAME, TYPE, ISFLAG, ISPOPPED, ...)                  \
+  _args_arg_impl(ARGS, NAME, TYPE, ISFLAG, ISPOPPED, ""__VA_ARGS__, 0, 0, 0, 0)
 
-#define args_reqd(VAR)                                                         \
-  do                                                                           \
-  {                                                                            \
-    __args[__arg_##VAR##_i].reqd = true;                                       \
-  } while (0)
+#define args_arg(ARGS, NAME, TYPE, ...)                                        \
+  ((TYPE *) _args_common(ARGS, #NAME, TYPE##arg, false, false, __VA_ARGS__))
 
-#define args_pop(...) _args_pop(__VA_ARGS__, NULL, NULL)
-#define _args_pop(VAR, TYPE, MESSAGE, DEFAULT, ...)                            \
-  const int __arg_##VAR##_i = __argpcount;                                     \
-  TYPE VAR;                                                                    \
-  do                                                                           \
-  {                                                                            \
-    __argp[__arg_##VAR##_i].name = #VAR;                                       \
-    __argp[__arg_##VAR##_i].type = TYPE##arg;                                  \
-    __argp[__arg_##VAR##_i].mesg = MESSAGE;                                    \
-    __argp[__arg_##VAR##_i].var  = (void *) &(VAR);                            \
-    __argp[__arg_##VAR##_i].def  = (void *) DEFAULT;                           \
-    __argp[__arg_##VAR##_i].used = false;                                      \
-    __argp[__arg_##VAR##_i].flag = false;                                      \
-    __argp[__arg_##VAR##_i].reqd = true;                                       \
-    __argp[__arg_##VAR##_i].sing = strlen(#VAR) == 1;                          \
-    __argpcount++;                                                             \
-  } while (0)
+#define args_flag(ARGS, NAME, ...)                                             \
+  ((bool *) _args_common(ARGS, #NAME, boolarg, true, false, __VA_ARGS__))
 
-#define args_parse(ARGC, ARGV)                                                 \
-  do                                                                           \
-  {                                                                            \
-    __argc                = ARGC;                                              \
-    const char *appnstart = strrchr(ARGV[0], ARG_PATHSEP);                     \
-    if (appnstart)                                                             \
-    {                                                                          \
-      appnstart += 1;                                                          \
-    }                                                                          \
-    else                                                                       \
-    {                                                                          \
-      appnstart = ARGV[0];                                                     \
-    }                                                                          \
-    char *extstart = strrchr(appnstart, '.');                                  \
-    if (__args_win32 || extstart == NULL)                                      \
-    {                                                                          \
-      extstart = ARGV[0] + strlen(ARGV[0]);                                    \
-    }                                                                          \
-    size_t len = extstart - appnstart;                                         \
-    __exename  = (char *) malloc(len + 1);                                     \
-    strncpy(__exename, appnstart, len);                                        \
-    __exename[len] = '\0';                                                     \
-    __argc -= 1;                                                               \
-    for (int i = 1; i < ARGC; ++i)                                             \
-    {                                                                          \
-      char *arg = ARGV[i];                                                     \
-      if (arg && arg[0] == '-')                                                \
-      {                                                                        \
-        bool found = false;                                                    \
-        char *argn = &(arg)[1];                                                \
-        for (int j = 0; j < __argscount; ++j)                                  \
-        {                                                                      \
-          if (!__args[j].sing && argn[0] == '-')                               \
-          {                                                                    \
-            argn += 1;                                                         \
-          }                                                                    \
-          int argnn   = strlen(argn);                                          \
-          int namen   = strlen(__args[j].name);                                \
-          char *eqpos = strchr(argn, '=');                                     \
-          bool vnext  = (i + 1 < __argc && ARGV[i + 1][0] != '-');             \
-          if (strcmp(__args[j].name, argn) == 0)                               \
-          {                                                                    \
-            if (__args[j].flag)                                                \
-            {                                                                  \
-              if (vnext || eqpos != NULL)                                      \
-              {                                                                \
-                fprintf(stderr,                                                \
-                        "ERROR: Argument '%s' doesn't accept a value\n",       \
-                        __args[j].name);                                       \
-                args_printhelp(stderr);                                        \
-                exit(1);                                                       \
-              }                                                                \
-              argsetdef(__args[j].var, (void *) 1);                            \
-              __argc -= 1;                                                     \
-            }                                                                  \
-            else                                                               \
-            {                                                                  \
-              if (eqpos != NULL)                                               \
-              {                                                                \
-                argsetvar(__args[j].var, __args[j].type, &(argn)[namen + 1]);  \
-                __argc -= 1;                                                   \
-              }                                                                \
-              else                                                             \
-              {                                                                \
-                argsetvar(__args[j].var, __args[j].type, ARGV[++i]);           \
-                __argc -= 2;                                                   \
-              }                                                                \
-            }                                                                  \
-            __args[j].used = true;                                             \
-            found          = true;                                             \
-            break;                                                             \
-          }                                                                    \
-        }                                                                      \
-        if (!found)                                                            \
-        {                                                                      \
-          for (int i = 0; argn[i] != '\0'; ++i)                                \
-          {                                                                    \
-            bool isflag = false;                                               \
-            for (int j = 0; j < __argscount; ++j)                              \
-            {                                                                  \
-              if (__args[j].sing && __args[j].flag &&                          \
-                  argn[i] == __args[j].name[0])                                \
-              {                                                                \
-                __args[j].used = true;                                         \
-                argsetdef(__args[j].var, (void *) true);                       \
-                isflag = true;                                                 \
-                break;                                                         \
-              }                                                                \
-            }                                                                  \
-            if (!isflag)                                                       \
-            {                                                                  \
-              fprintf(stderr, "ERROR: Unknown argument '%s'\n", argn);         \
-              args_printhelp(stderr);                                          \
-              exit(1);                                                         \
-            }                                                                  \
-          }                                                                    \
-          __argc -= 1;                                                         \
-        }                                                                      \
-      }                                                                        \
-    }                                                                          \
-    for (int j = 0; j < __argscount; ++j)                                      \
-    {                                                                          \
-      if (__args[j].flag && __args[j].type == boolarg &&                       \
-          strcmp(__args[j].name, "help") == 0 &&                               \
-          *((bool *) __args[j].var) == true)                                   \
-      {                                                                        \
-        args_printhelp(stdout);                                                \
-        exit(0);                                                               \
-      }                                                                        \
-      if (!__args[j].used)                                                     \
-      {                                                                        \
-        if (__args[j].reqd)                                                    \
-        {                                                                      \
-          fprintf(stderr,                                                      \
-                  "ERROR: Missing required argument '%s'\n",                   \
-                  __args[j].name);                                             \
-          args_printhelp(stderr);                                              \
-          exit(1);                                                             \
-        }                                                                      \
-        else                                                                   \
-        {                                                                      \
-          argsetdef(__args[j].var, __args[j].def);                             \
-        }                                                                      \
-      }                                                                        \
-    }                                                                          \
-  } while (0)
+#define args_pop(ARGS, NAME, TYPE, ...)                                        \
+  ((TYPE *) _args_common(ARGS, #NAME, TYPE##arg, false, true, __VA_ARGS__))
 
-#define args_popend(ARGC, ARGV)                                                \
-  do                                                                           \
-  {                                                                            \
-    if (__argc < __argpcount)                                                  \
-    {                                                                          \
-      fprintf(stderr,                                                          \
-              "ERROR: Missing required argument '%s'\n",                       \
-              __argp[__argc].name);                                            \
-      args_printhelp(stderr);                                                  \
-      exit(1);                                                                 \
-    }                                                                          \
-    for (int j = 0; j < __argpcount; ++j)                                      \
-    {                                                                          \
-    }                                                                          \
-  } while (0)
+extern ARGS _args_new_impl();
+
+extern void *_args_arg_impl(ARGS args, const char *name, ARGTYPE type,
+                            bool isFlag, bool isPopped, const char *message,
+                            uintptr_t defaultValue, bool isRequired, ...);
+
+extern bool _args_get_bool(char *value);
+extern char _args_get_char(char *value);
+extern short _args_get_short(char *value);
+extern int _args_get_int(char *value);
+extern long _args_get_long(char *value);
+extern float _args_get_float(char *value);
+extern double _args_get_double(char *value);
+extern string _args_get_str(char *value);
+extern bool _args_set_value(ARG *arg, char *value);
+
+extern void args_help(FILE *const stream, ARGS args);
+extern void _args_parse(ARGS args, int argc, char **argv);
 
 #ifdef __cplusplus
 }
 #endif
 
+#endif // _ARGS_H
+
+// -----------------------------------------------------------------------------
+
+#ifdef ARGS_IMPLEMENTATION
+#ifndef _ARGS_C
+#define _ARGS_C
+
+ARGS _args_new_impl()
+{
+  ARGS args  = (ARGS) malloc(sizeof(struct ARGS));
+  args->argc = 0;
+  memset(args->args, 0, sizeof(ARG) * ARGS_MAX_ARGC); // initialize to zero
+  return args;
+}
+
+void *_args_arg_impl(ARGS args, const char *name, ARGTYPE type, bool isFlag,
+                     bool isPopped, const char *message, uintptr_t defaultValue,
+                     bool isRequired, ...)
+{
+  if (!name || strchr(name, ' ') != NULL)
+  {
+    fprintf(stderr, "ERROR: Invalid argument name '%s'\n", name);
+    exit(1);
+  }
+  int tlen = _argtype_sizes[type];
+  args->args[args->argc] =
+    (ARG){name,  type,   message,    malloc(tlen),      (void *) defaultValue,
+          false, isFlag, isRequired, strlen(name) == 1, isPopped};
+  *((void **) args->args[args->argc].value) = (void *) defaultValue;
+  args->argc += 1;
+  return args->args[args->argc - 1].value;
+};
+
+bool _args_get_bool(char *value)
+{
+  if (!value)
+  {
+    return false;
+  }
+  for (int i = 0; value[i]; i++)
+  {
+    value[i] = tolower((unsigned char) value[i]);
+  }
+  return strcmp(value, "y") == 0 || strcmp(value, "t") == 0 ||
+         strcmp(value, "1") == 0 || strcmp(value, "yes") == 0 ||
+         strcmp(value, "true") == 0 || strcmp(value, "okay") == 0 ||
+         strcmp(value, "ok") == 0;
+}
+
+char _args_get_char(char *value)
+{
+  return value ? value[0] : 0;
+}
+
+short _args_get_short(char *value)
+{
+  return (short) atoi(value);
+}
+
+int _args_get_int(char *value)
+{
+  return atoi(value);
+}
+
+long _args_get_long(char *value)
+{
+  return atol(value);
+}
+
+float _args_get_float(char *value)
+{
+  return (float) atof(value);
+}
+
+double _args_get_double(char *value)
+{
+  return atof(value);
+}
+
+string _args_get_string(char *value)
+{
+  return value;
+}
+
+filepath _args_get_filepath(char *value)
+{
+  struct stat buffer;
+  if (stat(value, &buffer) != 0 && (buffer.st_mode & S_IFMT) == S_IFREG)
+  {
+    fprintf(stderr, "ERROR: Value '%s' is not a valid filepath", value);
+    exit(1);
+  }
+  return value;
+}
+
+dirpath _args_get_dirpath(char *value)
+{
+  struct stat buffer;
+  if (stat(value, &buffer) != 0 && (buffer.st_mode & S_IFMT) == S_IFDIR)
+  {
+    fprintf(stderr, "ERROR: Value '%s' is not a valid directory", value);
+    exit(1);
+  }
+  return value;
+}
+
+bool _args_set_value(ARG *a, char *xval)
+{
+  switch (a->type)
+  {
+    default:
+    {
+      *((void **) a->value) = NULL;
+      return false;
+    }
+#define X(TYPE)                                                                \
+  case TYPE##arg:                                                              \
+  {                                                                            \
+    *((TYPE *) a->value) = _args_get_##TYPE(xval);                             \
+    return true;                                                               \
+  }
+      ARGTYPES_X_LIST
+#undef X
+  }
+}
+
+void _arg_help(FILE *const s, ARG a)
+{
+  fprintf(s, "    -%s", a.name);
+  if (!a.isFlag)
+  {
+    if (!a.isRequired)
+    {
+      fprintf(s, "[");
+    }
+    fprintf(s, "=%s", _argtype_names[a.type]);
+    if (!a.isRequired)
+    {
+      fprintf(s, "]");
+    }
+  }
+  if (a.message != NULL && strlen(a.message) != 0)
+  {
+    fprintf(s, ": %s", a.message);
+    switch (a.type)
+    {
+#define X(TYPE)                                                                \
+  case TYPE##arg:                                                              \
+    printf(" (default: "_##TYPE##_fmt ")",                                     \
+           ((TYPE) ((uintptr_t) a.defaultValue)));                             \
+    break;
+      ARGTYPES_X_LIST
+    }
+  }
+  fprintf(s, "\n");
+}
+
+void args_help(FILE *const s, ARGS args)
+{
+  fprintf(s, "usage: %s", args->exe);
+  bool singleLetter = false;
+  for (int i = 0; i < args->argc; ++i)
+  {
+    ARG a = args->args[i];
+    if (!a.isRequired)
+    {
+      continue;
+    }
+    if (a.isSingleLetter)
+    {
+      if (!singleLetter)
+      {
+        fprintf(s, " -");
+      }
+      singleLetter = true;
+      fprintf(s, "%s", a.name);
+    }
+    else
+    {
+      fprintf(s, " -%s", a.name);
+    }
+  }
+  fprintf(s, " [options]");
+  for (int i = 0; i < args->argc; ++i)
+  {
+    ARG a = args->args[i];
+    if (a.isPopped)
+    {
+      fprintf(s, " %s", a.name);
+    }
+  }
+  fprintf(s, " ...\n");
+  bool hasRequired = false;
+  for (int i = 0; i < args->argc; ++i)
+  {
+    ARG a = args->args[i];
+    if (!a.isRequired || a.isPopped)
+    {
+      continue;
+    }
+    if (!hasRequired)
+    {
+      hasRequired = true;
+      fprintf(s, "  required:\n");
+    }
+    _arg_help(s, a);
+  }
+  bool hasOptions = false;
+  for (int i = 0; i < args->argc; ++i)
+  {
+    ARG a = args->args[i];
+    if (a.isRequired || a.isPopped)
+    {
+      continue;
+    }
+    if (!hasOptions)
+    {
+      hasOptions = true;
+      fprintf(s, "  options:\n");
+    }
+    _arg_help(s, a);
+  }
+  bool hasPopped = false;
+  for (int i = 0; i < args->argc; ++i)
+  {
+    ARG a = args->args[i];
+    if (!a.isPopped)
+    {
+      continue;
+    }
+    if (!hasPopped)
+    {
+      hasPopped = true;
+      fprintf(s, "  arguments:\n");
+    }
+    _arg_help(s, a);
+  }
+}
+
+#define args_parse(ARGS, ARGC, ARGV)                                           \
+  do                                                                           \
+  {                                                                            \
+    _args_parse(ARGS, ARGC, ARGV);                                             \
+    (ARGC) -= (ARGS)->argr;                                                    \
+    (ARGV) += (ARGS)->argr - 1;                                                \
+  } while (0)
+
+void _args_parse(ARGS args, int argc, char **argv)
+{
+  char *exe = strrchr(argv[0], ARGS_PATHSEP);
+  exe       = exe ? exe + 1 : argv[0];
+  int len   = strrchr(exe, '.') - exe;
+  len       = (__args_win32 || len <= 0) ? strlen(exe) : len;
+  args->exe = malloc(len + 1);
+  strncpy(args->exe, exe, len);
+  args->exe[len] = '\0';
+  argc -= 1;
+  argv += 1;
+  for (int i = 0; i < argc; ++i)
+  {
+    char *arg  = argv[i];
+    char *xval = strrchr(arg, '=');
+    if (xval != NULL)
+    {
+      xval += 1;
+    }
+    else if (i + 1 < argc && argv[i + 1][0] != '-')
+    {
+      xval = argv[i + 1];
+    }
+    if (arg[0] == '-')
+    {
+      bool found = false;
+      arg += 1;
+      int arglen = strlen(arg);
+      for (int j = 0; j < args->argc; ++j)
+      {
+        ARG *a = &args->args[j];
+        if (!a->isSingleLetter && arg[0] == '-')
+        {
+          arg += 1;
+          arglen = strlen(arg);
+        }
+        int namelen = strrchr(arg, '=') - arg;
+        if (namelen <= 0)
+        {
+          namelen = strlen(arg);
+        }
+        if (!strncmp(arg, a->name, namelen))
+        {
+          if (!a->isFlag)
+          {
+            if (xval == NULL)
+            {
+              fprintf(stderr, "ERROR: Expected value for argument '%s'\n",
+                      a->name);
+              args_help(stderr, args);
+              exit(1);
+            }
+            if (!_args_set_value(a, xval))
+            {
+              fprintf(stderr, "ERROR: Couldn't determine argument '%s' type\n",
+                      xval);
+              args_help(stderr, args);
+              exit(1);
+            }
+            args->argr += (i + 1 < argc && xval == argv[i + 1]) ? 2 : 1;
+          }
+          else
+          {
+            if (xval != NULL)
+            {
+              fprintf(stderr,
+                      "ERROR: Unexpected value '%s' for argument '%s'\n", xval,
+                      a->name);
+              args_help(stderr, args);
+              exit(1);
+            }
+            *((bool *) a->value) = true;
+          }
+          found     = true;
+          a->isUsed = true;
+          args->argr += 1;
+        }
+      }
+      if (!found)
+      {
+        int i = 0;
+        for (int j = 0; j < args->argc; ++j)
+        {
+          ARG *a = &(args->args)[j];
+          if (!a->isFlag && !a->isSingleLetter)
+          {
+            continue;
+          }
+          if (arg[i] == a->name[0])
+          {
+            *((bool *) a->value) = true;
+            a->isUsed            = true;
+            i++;
+            args->argr += 1;
+          }
+        }
+        if (i != arglen)
+        {
+          fprintf(stderr, "ERROR: Unexpected argument '%s'\n", arg);
+          args_help(stderr, args);
+          exit(1);
+        }
+      }
+    }
+  }
+  for (int j = 0; j < args->argc; ++j)
+  {
+    ARG a = args->args[j];
+    if (a.isRequired && !a.isUsed)
+    {
+      fprintf(stderr, "ERROR: Missing required argument '%s'\n", a.name);
+      args_help(stderr, args);
+      exit(1);
+    }
+  }
+  for (int i = args->argr; i < argc; ++i)
+  {
+    for (int j = 0; j < args->argc; ++j)
+    {
+      ARG a = args->args[j];
+      if (a.isPopped)
+      {
+        _args_set_value(&a, argv[i]);
+        a.isUsed = true;
+        args->argr += 1;
+      }
+    }
+  }
+  for (int j = 0; j < args->argc; ++j)
+  {
+    ARG a = args->args[j];
+    if (a.isPopped && !a.isUsed)
+    {
+      fprintf(stderr, "ERROR: Missing required argument '%s'\n", a.name);
+      args_help(stderr, args);
+      exit(1);
+    }
+  }
+}
+
 #endif
+#endif
+
 /*
-This software is served under two licenses - pick which you prefer.
 --------------------------------------------------------------------------------
+This software is served under two licenses - pick which you prefer.
 MIT License
 Copyright 2023 Dani Yeomans
 

@@ -1,3 +1,4 @@
 .vscode/
 [Oo]ut/
 [Oo]utput/
+*.*.ignore
