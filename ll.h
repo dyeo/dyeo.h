@@ -114,7 +114,7 @@ typedef void *(*LIBVFPTR)(void);
 #define LL_CONCAT(A, B) LL_CONCAT_IMPL(A, B)
 #define LL_CONCAT_IMPL(A, B) A##B
 
-#define _ll_lib(LibName) ll_lib_##LibName
+#define _ll_lib(LibName) _ll_lib_##LibName
 #define _ll_handle(LibName) _ll_handle_##LibName
 #define _ll_path(LibName) _ll_path_##LibName
 #define _ll_vptr(LibName, VarName) LibName.VarName
