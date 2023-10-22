@@ -290,23 +290,23 @@ string _args_get_string(char *value)
 filepath _args_get_filepath(char *value)
 {
   struct stat buffer;
-  if (stat(value, &buffer) != 0 && (buffer.st_mode & S_IFMT) == S_IFREG)
+  if (stat(value, &buffer) != 0 || (buffer.st_mode & S_IFMT) != S_IFREG)
   {
-    fprintf(stderr, "ERROR: Value '%s' is not a valid filepath", value);
+    fprintf(stderr, "ERROR: Value '%s' is not a valid filepath\n", value);
     exit(1);
   }
-  return value;
+  return strdup(value); // Return a copy of the string
 }
 
 dirpath _args_get_dirpath(char *value)
 {
   struct stat buffer;
-  if (stat(value, &buffer) != 0 && (buffer.st_mode & S_IFMT) == S_IFDIR)
+  if (stat(value, &buffer) != 0 || (buffer.st_mode & S_IFMT) != S_IFDIR)
   {
-    fprintf(stderr, "ERROR: Value '%s' is not a valid directory", value);
+    fprintf(stderr, "ERROR: Value '%s' is not a valid directory\n", value);
     exit(1);
   }
-  return value;
+  return strdup(value); // Return a copy of the string
 }
 
 bool _args_set_value(ARG *a, char *xval)
