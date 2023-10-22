@@ -53,6 +53,7 @@ extern "C" {
 #endif
 
 #include <ctype.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -162,7 +163,8 @@ typedef struct ARGS
   } while (0)
 
 #define _args_common(ARGS, NAME, TYPE, ISFLAG, ISPOPPED, ...)                  \
-  _args_arg_impl(ARGS, NAME, TYPE, ISFLAG, ISPOPPED, ""__VA_ARGS__, 0, 0, 0, 0)
+  _args_arg_impl(ARGS, NAME, TYPE, ISFLAG, ISPOPPED, 0, ""__VA_ARGS__, 0, 0,   \
+                 0, 0)
 
 #define args_arg(ARGS, NAME, TYPE, ...)                                        \
   ((TYPE *) _args_common(ARGS, #NAME, TYPE##arg, false, false, __VA_ARGS__))
@@ -176,8 +178,7 @@ typedef struct ARGS
 extern ARGS _args_new_impl();
 
 extern void *_args_arg_impl(ARGS args, const char *name, ARGTYPE type,
-                            bool isFlag, bool isPopped, const char *message,
-                            uintptr_t defaultValue, bool isRequired, ...);
+                            bool isFlag, bool isPopped, int _, ...);
 
 extern bool _args_get_bool(char *value);
 extern char _args_get_char(char *value);
@@ -213,9 +214,14 @@ ARGS _args_new_impl()
 }
 
 void *_args_arg_impl(ARGS args, const char *name, ARGTYPE type, bool isFlag,
-                     bool isPopped, const char *message, uintptr_t defaultValue,
-                     bool isRequired, ...)
+                     bool isPopped, int _, ...)
 {
+  va_list varg;
+  va_start(varg, _);
+  char *message      = va_arg(varg, char *);
+  void *defaultValue = va_arg(varg, void *);
+  bool isRequired    = va_arg(varg, int);
+  va_end(varg);
   if (!name || strchr(name, ' ') != NULL)
   {
     fprintf(stderr, "ERROR: Invalid argument name '%s'\n", name);
@@ -345,8 +351,11 @@ void _arg_help(FILE *const s, ARG a)
     {
 #define X(TYPE)                                                                \
   case TYPE##arg:                                                              \
-    printf(" (default: "_##TYPE##_fmt ")",                                     \
-           ((TYPE) ((uintptr_t) a.defaultValue)));                             \
+    if (a.defaultValue != 0)                                                   \
+    {                                                                          \
+      printf(" (default: "_##TYPE##_fmt ")",                                   \
+             ((TYPE) ((uintptr_t) a.defaultValue)));                           \
+    }                                                                          \
     break;
       ARGTYPES_X_LIST
     }
