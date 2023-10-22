@@ -406,9 +406,9 @@ extern "C" {
   _log_full(stderr, _TermColErr "X", FORMAT, __VA_ARGS__)
 
 // log a command
-#define log_cmd(CMD, ARGS)                                                     \
-  _log_full(                                                                   \
-    stdout, _TermColPing ">", _TermColCmd "%s" _TermCol0 " %s", CMD, ARGS)
+#define log_cmd(CMD, args_t)                                                   \
+  _log_full(stdout, _TermColPing ">", _TermColCmd "%s" _TermCol0 " %s", CMD,   \
+            args_t)
 
 // ---------------------------------------------------------------------------------------------------------------------
 
@@ -420,15 +420,11 @@ _malloc char *_build_h_errmsg(DWORD errorMessageID)
     return NULL;
   }
   LPSTR messageBuffer = NULL;
-  size_t size =
-    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
-                    FORMAT_MESSAGE_IGNORE_INSERTS,
-                  NULL,
-                  errorMessageID,
-                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  (LPSTR) &messageBuffer,
-                  0,
-                  NULL);
+  size_t size         = FormatMessage(
+    FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+      FORMAT_MESSAGE_IGNORE_INSERTS,
+    NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+    (LPSTR) &messageBuffer, 0, NULL);
   if (size == 0)
   {
     return NULL;
@@ -740,15 +736,15 @@ static inline _malloc char *cwd()
 
 // ---------------------------------------------------------------------------------------------------------------------
 
-typedef struct COMMAND
+typedef struct command_t
 {
   char *cmd;
   char *args;
   size_t length;
   size_t capacity;
-} *COMMAND;
+} *command_t;
 
-static void _build_h_cmd_add_arg(COMMAND cmd, const char *arg)
+static void _build_h_cmd_add_arg(command_t cmd, const char *arg)
 {
   if (arg == NULL)
   {
@@ -785,7 +781,7 @@ static void _build_h_cmd_add_arg(COMMAND cmd, const char *arg)
   cmd->length = new_length - 1;
 }
 
-static inline void _build_h_cmdarg_va_list(COMMAND cmd, va_list args)
+static inline void _build_h_cmdarg_va_list(command_t cmd, va_list args)
 {
   const char *arg = NULL;
   while ((arg = va_arg(args, char *)) != NULL)
@@ -796,7 +792,7 @@ static inline void _build_h_cmdarg_va_list(COMMAND cmd, va_list args)
 
 // add N arguments to command
 #define cmdarg(CMDPTR, ...) _build_h_cmdarg(CMDPTR, __VA_ARGS__, NULL)
-static inline void _build_h_cmdarg(COMMAND cmd, ...)
+static inline void _build_h_cmdarg(command_t cmd, ...)
 {
   va_list args;
   va_start(args, cmd);
@@ -810,9 +806,9 @@ static inline void _build_h_cmdarg(COMMAND cmd, ...)
 // create new command with N arguments
 // free with cmdfree
 #define cmdnew(...) _build_h_cmdnew(__VA_ARGS__, NULL)
-static COMMAND _build_h_cmdnew(const char *command, ...)
+static command_t _build_h_cmdnew(const char *command, ...)
 {
-  COMMAND cmd = (COMMAND ) malloc(sizeof(struct COMMAND));
+  command_t cmd = (command_t) malloc(sizeof(struct command_t));
   if (!cmd)
   {
     log_error("%s", "Failed to allocate memory for command");
@@ -840,7 +836,7 @@ static COMMAND _build_h_cmdnew(const char *command, ...)
 
 // get full command str
 // free with free
-static _malloc char *cmdstr(COMMAND cmd)
+static _malloc char *cmdstr(command_t cmd)
 {
   if (cmd == NULL)
   {
@@ -874,7 +870,7 @@ static _malloc char *cmdstr(COMMAND cmd)
 }
 
 // free a command
-static void cmdfree(COMMAND cmd)
+static void cmdfree(command_t cmd)
 {
   if (cmd == NULL)
   {
@@ -889,7 +885,7 @@ static void cmdfree(COMMAND cmd)
 #define cmdcall(...)                                                           \
   do                                                                           \
   {                                                                            \
-    COMMAND __thisCmdPtr = cmdnew(__VA_ARGS__);                                   \
+    command_t __thisCmdPtr = cmdnew(__VA_ARGS__);                              \
     if (__thisCmdPtr)                                                          \
     {                                                                          \
       cmdcallf(__thisCmdPtr);                                                  \
@@ -899,7 +895,7 @@ static void cmdfree(COMMAND cmd)
 
 // call the command
 // returns true on success, false on failure
-static bool cmdcallf(COMMAND c)
+static bool cmdcallf(command_t c)
 {
 #if __WINDOWS__
   if (c == NULL)

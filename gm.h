@@ -417,7 +417,7 @@ GM_CONST ldouble GM_OPERNAME(gm, inv_pi_ld) =
 GM_CONST ldouble GM_OPERNAME(gm, inv_sqrtpi_ld) =
   0.5641895835477562869480794515607725858441L;
 GM_CONST
-  ldouble GM_OPERNAME(gm, tau_ld) = 6.283185307179586476925286766559005768394L;
+ldouble GM_OPERNAME(gm, tau_ld) = 6.283185307179586476925286766559005768394L;
 GM_CONST ldouble GM_OPERNAME(gm, sqrttau_ld) =
   2.506628274631000502415765284811045253007L;
 GM_CONST ldouble GM_OPERNAME(gm, inv_tau_ld) =
@@ -425,9 +425,9 @@ GM_CONST ldouble GM_OPERNAME(gm, inv_tau_ld) =
 GM_CONST ldouble GM_OPERNAME(gm, inv_sqrttau_ld) =
   0.3989422804014326779399460599343818684759L;
 GM_CONST
-  ldouble GM_OPERNAME(gm, ln2_ld) = 0.6931471805599453094172321214581765680755L;
+ldouble GM_OPERNAME(gm, ln2_ld) = 0.6931471805599453094172321214581765680755L;
 GM_CONST
-  ldouble GM_OPERNAME(gm, ln10_ld) = 2.302585092994045684017991454684364207601L;
+ldouble GM_OPERNAME(gm, ln10_ld) = 2.302585092994045684017991454684364207601L;
 GM_CONST ldouble GM_OPERNAME(gm, sqrt2_ld) =
   1.414213562373095048801688724209698078570L;
 GM_CONST ldouble GM_OPERNAME(gm, inv_sqrt2_ld) =
@@ -437,7 +437,7 @@ GM_CONST ldouble GM_OPERNAME(gm, sqrt3_ld) =
 GM_CONST ldouble GM_OPERNAME(gm, inv_sqrt3_ld) =
   0.5773502691896257645091487805019574556476L;
 GM_CONST
-  ldouble GM_OPERNAME(gm, phi_ld) = 1.618033988749894848204586834365638117720L;
+ldouble GM_OPERNAME(gm, phi_ld) = 1.618033988749894848204586834365638117720L;
 GM_CONST ldouble GM_OPERNAME(gm, egamma_ld) =
   0.5772156649015328606065120900824024310422L;
 GM_CONST ldouble GM_OPERNAME(gm, catalan_ld) =
@@ -1172,26 +1172,10 @@ GM_CDECL long sqrtli(const long i)
 #define _gm_ldouble_or(X, Y) (NAN)
 
 #define GM_ARGC(...)                                                           \
-  GM_ARGC_IMPL(                                                                \
-    __VA_ARGS__, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
-#define GM_ARGC_IMPL(_1,                                                       \
-                     _2,                                                       \
-                     _3,                                                       \
-                     _4,                                                       \
-                     _5,                                                       \
-                     _6,                                                       \
-                     _7,                                                       \
-                     _8,                                                       \
-                     _9,                                                       \
-                     _10,                                                      \
-                     _11,                                                      \
-                     _12,                                                      \
-                     _13,                                                      \
-                     _14,                                                      \
-                     _15,                                                      \
-                     _16,                                                      \
-                     N,                                                        \
-                     ...)                                                      \
+  GM_ARGC_IMPL(__VA_ARGS__, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3,   \
+               2, 1, 0)
+#define GM_ARGC_IMPL(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13,   \
+                     _14, _15, _16, N, ...)                                    \
   N
 
 #define GM_MACROCALL_V(MFUNC, ...)                                             \
@@ -1218,30 +1202,30 @@ GM_CDECL long sqrtli(const long i)
 #define GM_MACROCALL_10(MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)    \
   MFUNC(_0), MFUNC(_1), MFUNC(_2), MFUNC(_3), MFUNC(_4), MFUNC(_5), MFUNC(_6), \
     MFUNC(_7), MFUNC(_8), MFUNC(_9)
-#define GM_MACROCALL_11(                                                       \
-  MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, ...)                     \
+#define GM_MACROCALL_11(MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,    \
+                        ...)                                                   \
   MFUNC(_0), MFUNC(_1), MFUNC(_2), MFUNC(_3), MFUNC(_4), MFUNC(_5), MFUNC(_6), \
     MFUNC(_7), MFUNC(_8), MFUNC(_9), MFUNC(_10)
-#define GM_MACROCALL_12(                                                       \
-  MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, ...)                \
+#define GM_MACROCALL_12(MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,    \
+                        _11, ...)                                              \
   MFUNC(_0), MFUNC(_1), MFUNC(_2), MFUNC(_3), MFUNC(_4), MFUNC(_5), MFUNC(_6), \
     MFUNC(_7), MFUNC(_8), MFUNC(_9), MFUNC(_10), MFUNC(_11)
-#define GM_MACROCALL_13(                                                       \
-  MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, ...)           \
+#define GM_MACROCALL_13(MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,    \
+                        _11, _12, ...)                                         \
   MFUNC(_0), MFUNC(_1), MFUNC(_2), MFUNC(_3), MFUNC(_4), MFUNC(_5), MFUNC(_6), \
     MFUNC(_7), MFUNC(_8), MFUNC(_9), MFUNC(_10), MFUNC(_11), MFUNC(_12)
-#define GM_MACROCALL_14(                                                       \
-  MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, ...)      \
+#define GM_MACROCALL_14(MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,    \
+                        _11, _12, _13, ...)                                    \
   MFUNC(_0), MFUNC(_1), MFUNC(_2), MFUNC(_3), MFUNC(_4), MFUNC(_5), MFUNC(_6), \
     MFUNC(_7), MFUNC(_8), MFUNC(_9), MFUNC(_10), MFUNC(_11), MFUNC(_12),       \
     MFUNC(_13)
-#define GM_MACROCALL_15(                                                       \
-  MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, ...) \
+#define GM_MACROCALL_15(MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,    \
+                        _11, _12, _13, _14, ...)                               \
   MFUNC(_0), MFUNC(_1), MFUNC(_2), MFUNC(_3), MFUNC(_4), MFUNC(_5), MFUNC(_6), \
     MFUNC(_7), MFUNC(_8), MFUNC(_9), MFUNC(_10), MFUNC(_11), MFUNC(_12),       \
     MFUNC(_13), MFUNC(_14)
-#define GM_MACROCALL_16(                                                       \
-  MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15) \
+#define GM_MACROCALL_16(MFUNC, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,    \
+                        _11, _12, _13, _14, _15)                               \
   MFUNC(_0), MFUNC(_1), MFUNC(_2), MFUNC(_3), MFUNC(_4), MFUNC(_5), MFUNC(_6), \
     MFUNC(_7), MFUNC(_8), MFUNC(_9), MFUNC(_10), MFUNC(_11), MFUNC(_12),       \
     MFUNC(_13), MFUNC(_14), MFUNC(_15)
@@ -1346,44 +1330,28 @@ GM_CDECL long sqrtli(const long i)
 #define GM_PARAMLIST_10(TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, ...)     \
   TYPE _0, TYPE _1, TYPE _2, TYPE _3, TYPE _4, TYPE _5, TYPE _6, TYPE _7,      \
     TYPE _8, TYPE _9
-#define GM_PARAMLIST_11(                                                       \
-  TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, ...)                      \
+#define GM_PARAMLIST_11(TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,     \
+                        ...)                                                   \
   TYPE _0, TYPE _1, TYPE _2, TYPE _3, TYPE _4, TYPE _5, TYPE _6, TYPE _7,      \
     TYPE _8, TYPE _9, TYPE _10
-#define GM_PARAMLIST_12(                                                       \
-  TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, ...)                 \
+#define GM_PARAMLIST_12(TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,     \
+                        _11, ...)                                              \
   TYPE _0, TYPE _1, TYPE _2, TYPE _3, TYPE _4, TYPE _5, TYPE _6, TYPE _7,      \
     TYPE _8, TYPE _9, TYPE _10, TYPE _11
-#define GM_PARAMLIST_13(                                                       \
-  TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, ...)            \
+#define GM_PARAMLIST_13(TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,     \
+                        _11, _12, ...)                                         \
   TYPE _0, TYPE _1, TYPE _2, TYPE _3, TYPE _4, TYPE _5, TYPE _6, TYPE _7,      \
     TYPE _8, TYPE _9, TYPE _10, TYPE _11, TYPE _12
-#define GM_PARAMLIST_14(                                                       \
-  TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, ...)       \
+#define GM_PARAMLIST_14(TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,     \
+                        _11, _12, _13, ...)                                    \
   TYPE _0, TYPE _1, TYPE _2, TYPE _3, TYPE _4, TYPE _5, TYPE _6, TYPE _7,      \
     TYPE _8, TYPE _9, TYPE _10, TYPE _11, TYPE _12, TYPE _13
-#define GM_PARAMLIST_15(                                                       \
-  TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, ...)  \
+#define GM_PARAMLIST_15(TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,     \
+                        _11, _12, _13, _14, ...)                               \
   TYPE _0, TYPE _1, TYPE _2, TYPE _3, TYPE _4, TYPE _5, TYPE _6, TYPE _7,      \
     TYPE _8, TYPE _9, TYPE _10, TYPE _11, TYPE _12, TYPE _13, TYPE _14
-#define GM_PARAMLIST_16(TYPE,                                                  \
-                        _0,                                                    \
-                        _1,                                                    \
-                        _2,                                                    \
-                        _3,                                                    \
-                        _4,                                                    \
-                        _5,                                                    \
-                        _6,                                                    \
-                        _7,                                                    \
-                        _8,                                                    \
-                        _9,                                                    \
-                        _10,                                                   \
-                        _11,                                                   \
-                        _12,                                                   \
-                        _13,                                                   \
-                        _14,                                                   \
-                        _15,                                                   \
-                        ...)                                                   \
+#define GM_PARAMLIST_16(TYPE, _0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,     \
+                        _11, _12, _13, _14, _15, ...)                          \
   TYPE _0, TYPE _1, TYPE _2, TYPE _3, TYPE _4, TYPE _5, TYPE _6, TYPE _7,      \
     TYPE _8, TYPE _9, TYPE _10, TYPE _11, TYPE _12, TYPE _13, TYPE _14,        \
     TYPE _15
@@ -1465,8 +1433,8 @@ GM_CDECL long sqrtli(const long i)
 #define GM_VEC4_PVALS(V) (V)->a[0], (V)->a[1], (V)->a[2], (V)->a[3]
 
 #define GM_MAT_FMT(N, TYPE)                                                    \
-  "[" GM_SEP_N(                                                                \
-    N, ",", "(" GM_SEP_N(N, ",", GM_CONCAT_1(_gm_, TYPE, _fmt)) ")") "]"
+  "[" GM_SEP_N(N, ",",                                                         \
+               "(" GM_SEP_N(N, ",", GM_CONCAT_1(_gm_, TYPE, _fmt)) ")") "]"
 #define GM_MAT_VALS(N, V) GM_CONCAT_1(GM_MAT, GM_CONCAT_1(N, X, N), _VALS)(V)
 #define GM_MAT_PVALS(N, TYPE)                                                  \
   GM_CONCAT_1(GM_MAT, GM_CONCAT_1(N, X, N), _PVALS)(V)
@@ -1707,13 +1675,13 @@ GM_CDECL long sqrtli(const long i)
 #define _gm_swz_zzzy(VEC) (VEC).a[2], (VEC).a[2], (VEC).a[2], (VEC).a[1]
 #define _gm_swz_zzzz(VEC) (VEC).a[2], (VEC).a[2], (VEC).a[2], (VEC).a[2]
 
-#define GM_SWIZZLE(VEC, ARGS)                                                  \
+#define GM_SWIZZLE(VEC, args_t)                                                \
   {                                                                            \
-    GM_CONCAT(_gm_swz_, ARGS)(VEC)                                             \
+    GM_CONCAT(_gm_swz_, args_t)(VEC)                                           \
   }
 
-#define GM_DEF_CONSTS(                                                         \
-  TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, DIRECTION, ...)                \
+#define GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, DIRECTION, \
+                      ...)                                                     \
   GM_CONST TYPENAME GM_OPERNAME(SHORTNAME, DIRECTION) = {__VA_ARGS__};
 
 #define GM_NEW_OP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N)                \
@@ -1898,8 +1866,8 @@ GM_CDECL long sqrtli(const long i)
   }
 
 #define GM_LERP_OP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, OPER)         \
-  GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER)(                              \
-    const TYPENAME a, const TYPENAME b, float t)                               \
+  GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER)(const TYPENAME a,             \
+                                                 const TYPENAME b, float t)    \
   {                                                                            \
     TYPENAME result;                                                           \
     for (size_t i = 0; i < N; ++i)                                             \
@@ -2028,25 +1996,22 @@ typedef struct Quaternion
       return q;                                                                \
     }                                                                          \
     BASETYPE invNorm = 1.0f / norm;                                            \
-    return (TYPENAME){{q.a[0] * invNorm,                                       \
-                       -q.a[1] * invNorm,                                      \
-                       -q.a[2] * invNorm,                                      \
+    return (TYPENAME){{q.a[0] * invNorm, -q.a[1] * invNorm, -q.a[2] * invNorm, \
                        -q.a[3] * invNorm}};                                    \
   }
 
 #define GM_QUAT_SLERP_OP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, OPER)   \
-  GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER)(                              \
-    const TYPENAME q1, const TYPENAME q2, float t)                             \
+  GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER)(const TYPENAME q1,            \
+                                                 const TYPENAME q2, float t)   \
   {                                                                            \
     float dot      = GM_OPERNAME(SHORTNAME, dot)(q1, q2);                      \
     float theta    = acosf(dot);                                               \
     float sinTheta = sinf(theta);                                              \
     float w1       = sinf((1.0f - t) * theta) / sinTheta;                      \
     float w2       = sinf(t * theta) / sinTheta;                               \
-    return (TYPENAME){{{w1 * q1.a[0] + w2 * q2.a[0],                           \
-                        w1 * q1.a[1] + w2 * q2.a[1],                           \
-                        w1 * q1.a[2] + w2 * q2.a[2],                           \
-                        w1 * q1.a[3] + w2 * q2.a[3]}}};                        \
+    return (TYPENAME){                                                         \
+      {{w1 * q1.a[0] + w2 * q2.a[0], w1 * q1.a[1] + w2 * q2.a[1],              \
+        w1 * q1.a[2] + w2 * q2.a[2], w1 * q1.a[3] + w2 * q2.a[3]}}};           \
   }
 
 #define GM_QUAT_MUL_REF_OP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, OPER) \
@@ -2064,8 +2029,8 @@ typedef struct Quaternion
     return l;                                                                  \
   }
 
-#define GM_QUAT_ROTV(                                                          \
-  TYPENAME, SHORTNAME, VTYPENAME, BASETYPE, TYPEPREFIX, N, OPER)               \
+#define GM_QUAT_ROTV(TYPENAME, SHORTNAME, VTYPENAME, BASETYPE, TYPEPREFIX, N,  \
+                     OPER)                                                     \
   GM_CDECL VTYPENAME GM_OPERNAME(SHORTNAME, OPER)(const TYPENAME q,            \
                                                   const VTYPENAME v)           \
   {                                                                            \
@@ -2091,8 +2056,8 @@ typedef struct Quaternion
     return (VTYPENAME){{{x, y, z}}};                                           \
   }
 
-#define GM_QUAT_ROTM(                                                          \
-  TYPENAME, SHORTNAME, VTYPENAME, BASETYPE, TYPEPREFIX, N, OPER)               \
+#define GM_QUAT_ROTM(TYPENAME, SHORTNAME, VTYPENAME, BASETYPE, TYPEPREFIX, N,  \
+                     OPER)                                                     \
   GM_CDECL GM_MAT3X3_TYPENAME(BASETYPE, TYPEPREFIX)                            \
     GM_OPERNAME(SHORTNAME, OPER)(const TYPENAME q)                             \
   {                                                                            \
@@ -2105,15 +2070,10 @@ typedef struct Quaternion
     BASETYPE wx = q.w * q.x;                                                   \
     BASETYPE wy = q.w * q.y;                                                   \
     BASETYPE wz = q.w * q.z;                                                   \
-    return (GM_MAT3X3_TYPENAME(BASETYPE, TYPEPREFIX)){{{1 - 2 * (yy + zz),     \
-                                                        2 * (xy - wz),         \
-                                                        2 * (xz + wy),         \
-                                                        2 * (xy + wz),         \
-                                                        1 - 2 * (xx + zz),     \
-                                                        2 * (yz - wx),         \
-                                                        2 * (xz - wy),         \
-                                                        2 * (yz + wx),         \
-                                                        1 - 2 * (xx + yy)}}};  \
+    return (GM_MAT3X3_TYPENAME(BASETYPE, TYPEPREFIX)){                         \
+      {{1 - 2 * (yy + zz), 2 * (xy - wz), 2 * (xz + wy), 2 * (xy + wz),        \
+        1 - 2 * (xx + zz), 2 * (yz - wx), 2 * (xz - wy), 2 * (yz + wx),        \
+        1 - 2 * (xx + yy)}}};                                                  \
   }
 
 #define GM_REF_OP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, OPER)          \
@@ -2148,8 +2108,8 @@ typedef struct Quaternion
     return v;                                                                  \
   }
 
-#define GM_MAT_MUL_REF_OP(                                                     \
-  TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, OPER)                       \
+#define GM_MAT_MUL_REF_OP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N,     \
+                          OPER)                                                \
   GM_CDECL TYPENAME *GM_OPERNAME(SHORTNAME, r##OPER)(TYPENAME * l,             \
                                                      const TYPENAME r)         \
   {                                                                            \
@@ -2272,8 +2232,8 @@ typedef struct Quaternion
   }
 
 #define GM_MAT_LUDECOMP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, OPER) \
-  GM_CDECL void GM_OPERNAME(SHORTNAME,                                         \
-                            OPER)(const TYPENAME m, TYPENAME *l, TYPENAME *u)  \
+  GM_CDECL void GM_OPERNAME(SHORTNAME, OPER)(const TYPENAME m, TYPENAME *l,    \
+                                             TYPENAME *u)                      \
   {                                                                            \
     *l = GM_OPERNAME(SHORTNAME, zero);                                         \
     *u = GM_OPERNAME(SHORTNAME, zero);                                         \
@@ -2307,36 +2267,14 @@ typedef struct Quaternion
     }                                                                          \
   }
 
-#define GM_MAT4X4_TRS(TYPENAME,                                                \
-                      SHORTNAME,                                               \
-                      BASETYPE,                                                \
-                      TYPEPREFIX,                                              \
-                      M,                                                       \
-                      N,                                                       \
-                      OPER,                                                    \
-                      MTYPENAME,                                               \
-                      MSHORTNAME,                                              \
-                      VTYPENAME,                                               \
-                      VSHORTNAME)                                              \
+#define GM_MAT4X4_TRS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, OPER,   \
+                      MTYPENAME, MSHORTNAME, VTYPENAME, VSHORTNAME)            \
   GM_CDECL TYPENAME GM_CONCAT(SHORTNAME, OPER)(const MTYPENAME r,              \
                                                const VTYPENAME p)              \
   {                                                                            \
-    return (TYPENAME){{{r.a[0],                                                \
-                        r.a[1],                                                \
-                        r.a[2],                                                \
-                        p.a[0],                                                \
-                        r.a[3],                                                \
-                        r.a[4],                                                \
-                        r.a[5],                                                \
-                        p.a[1],                                                \
-                        r.a[6],                                                \
-                        r.a[7],                                                \
-                        r.a[8],                                                \
-                        p.a[2],                                                \
-                        0,                                                     \
-                        0,                                                     \
-                        0,                                                     \
-                        1}}};                                                  \
+    return (TYPENAME){                                                         \
+      {{r.a[0], r.a[1], r.a[2], p.a[0], r.a[3], r.a[4], r.a[5], p.a[1],        \
+        r.a[6], r.a[7], r.a[8], p.a[2], 0, 0, 0, 1}}};                         \
   }                                                                            \
   GM_CDECL VTYPENAME GM_OPERNAME(SHORTNAME, OPER##getpos)(const TYPENAME m)    \
   {                                                                            \
@@ -2344,22 +2282,12 @@ typedef struct Quaternion
   }                                                                            \
   GM_CDECL MTYPENAME GM_OPERNAME(SHORTNAME, OPER##getrot)(const TYPENAME m)    \
   {                                                                            \
-    return (MTYPENAME){{{m.a[0],                                               \
-                         m.a[1],                                               \
-                         m.a[2],                                               \
-                         m.a[4],                                               \
-                         m.a[5],                                               \
-                         m.a[6],                                               \
-                         m.a[8],                                               \
-                         m.a[9],                                               \
-                         m.a[10]}}};                                           \
+    return (MTYPENAME){{{m.a[0], m.a[1], m.a[2], m.a[4], m.a[5], m.a[6],       \
+                         m.a[8], m.a[9], m.a[10]}}};                           \
   }                                                                            \
-  GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER##ortho)(const BASETYPE left,   \
-                                                        const BASETYPE right,  \
-                                                        const BASETYPE bottom, \
-                                                        const BASETYPE top,    \
-                                                        const BASETYPE near,   \
-                                                        const BASETYPE far)    \
+  GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER##ortho)(                       \
+    const BASETYPE left, const BASETYPE right, const BASETYPE bottom,          \
+    const BASETYPE top, const BASETYPE near, const BASETYPE far)               \
   {                                                                            \
     BASETYPE rightMinusLeft = right - left;                                    \
     BASETYPE topMinusBottom = top - bottom;                                    \
@@ -2367,48 +2295,23 @@ typedef struct Quaternion
     BASETYPE rightPlusLeft  = right + left;                                    \
     BASETYPE topPlusBottom  = top + bottom;                                    \
     BASETYPE farPlusNear    = far + near;                                      \
-    return (TYPENAME){{{2.0 / rightMinusLeft,                                  \
-                        0,                                                     \
-                        0,                                                     \
-                        -rightPlusLeft / rightMinusLeft,                       \
-                        0,                                                     \
-                        2.0 / topMinusBottom,                                  \
-                        0,                                                     \
-                        -topPlusBottom / topMinusBottom,                       \
-                        0,                                                     \
-                        0,                                                     \
-                        -2.0 / farMinusNear,                                   \
-                        -farPlusNear / farMinusNear,                           \
-                        0,                                                     \
-                        0,                                                     \
-                        0,                                                     \
-                        1}}};                                                  \
+    return (TYPENAME){                                                         \
+      {{2.0 / rightMinusLeft, 0, 0, -rightPlusLeft / rightMinusLeft, 0,        \
+        2.0 / topMinusBottom, 0, -topPlusBottom / topMinusBottom, 0, 0,        \
+        -2.0 / farMinusNear, -farPlusNear / farMinusNear, 0, 0, 0, 1}}};       \
   }                                                                            \
-  GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER##persp)(const angf fovy,       \
-                                                        const BASETYPE aspect, \
-                                                        const BASETYPE near,   \
-                                                        const BASETYPE far)    \
+  GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER##persp)(                       \
+    const angf fovy, const BASETYPE aspect, const BASETYPE near,               \
+    const BASETYPE far)                                                        \
   {                                                                            \
     BASETYPE tanHalfFovy              = tan(fovy.a / 2.0);                     \
     BASETYPE oneOverAspectTanHalfFovy = 1.0 / (aspect * tanHalfFovy);          \
     BASETYPE minusFarPlusNear         = -(far + near);                         \
     BASETYPE twoFarNear               = -2.0 * far * near;                     \
-    return (TYPENAME){{{oneOverAspectTanHalfFovy,                              \
-                        0,                                                     \
-                        0,                                                     \
-                        0,                                                     \
-                        0,                                                     \
-                        1.0 / tanHalfFovy,                                     \
-                        0,                                                     \
-                        0,                                                     \
-                        0,                                                     \
-                        0,                                                     \
-                        minusFarPlusNear / (far - near),                       \
-                        twoFarNear / (far - near),                             \
-                        0,                                                     \
-                        0,                                                     \
-                        -1,                                                    \
-                        0}}};                                                  \
+    return (TYPENAME){                                                         \
+      {{oneOverAspectTanHalfFovy, 0, 0, 0, 0, 1.0 / tanHalfFovy, 0, 0, 0, 0,   \
+        minusFarPlusNear / (far - near), twoFarNear / (far - near), 0, 0, -1,  \
+        0}}};                                                                  \
   }                                                                            \
   GM_CDECL MTYPENAME GM_OPERNAME(SHORTNAME, OPER##rotx)(const angf x)          \
   {                                                                            \
@@ -2430,8 +2333,8 @@ typedef struct Quaternion
   }                                                                            \
   GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER##scl)(const VTYPENAME s)       \
   {                                                                            \
-    return (TYPENAME){                                                         \
-      s.a[0], 0, 0, 0, 0, s.a[1], 0, 0, 0, 0, s.a[2], 0, 0, 0, 0, 1};          \
+    return (TYPENAME){s.a[0], 0, 0,      0, 0, s.a[1], 0, 0,                   \
+                      0,      0, s.a[2], 0, 0, 0,      0, 1};                  \
   }                                                                            \
   GM_CDECL MTYPENAME GM_OPERNAME(SHORTNAME, OPER##sclm)(const VTYPENAME s)     \
   {                                                                            \
@@ -2439,8 +2342,8 @@ typedef struct Quaternion
   }                                                                            \
   GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER##pos)(const VTYPENAME p)       \
   {                                                                            \
-    return (TYPENAME){                                                         \
-      1, 0, 0, p.a[0], 0, 1, 0, p.a[1], 0, 0, 1, p.a[2], 0, 0, 0, 1};          \
+    return (TYPENAME){1, 0, 0, p.a[0], 0, 1, 0, p.a[1],                        \
+                      0, 0, 1, p.a[2], 0, 0, 0, 1};                            \
   }                                                                            \
   GM_CDECL MTYPENAME GM_OPERNAME(SHORTNAME, OPER##rotm)(                       \
     const angf x, const angf y, const angf z)                                  \
@@ -2479,19 +2382,8 @@ typedef struct Quaternion
     return GM_OPERNAME(SHORTNAME, sdiv)(adj, det);                             \
   }
 
-#define GM_MAT_MINOR(TYPENAME,                                                 \
-                     SHORTNAME,                                                \
-                     BASETYPE,                                                 \
-                     TYPEPREFIX,                                               \
-                     M,                                                        \
-                     N,                                                        \
-                     O,                                                        \
-                     P,                                                        \
-                     OPER,                                                     \
-                     MTYPENAME,                                                \
-                     MSHORTNAME,                                               \
-                     VTYPENAME,                                                \
-                     VSHORTNAME)                                               \
+#define GM_MAT_MINOR(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P,    \
+                     OPER, MTYPENAME, MSHORTNAME, VTYPENAME, VSHORTNAME)       \
   GM_CDECL MTYPENAME GM_OPERNAME(SHORTNAME, OPER)(                             \
     const TYPENAME m, const size_t r, const size_t c)                          \
   {                                                                            \
@@ -2517,17 +2409,8 @@ typedef struct Quaternion
     return v;                                                                  \
   }
 
-#define GM_MAT_COFACTOR(TYPENAME,                                              \
-                        SHORTNAME,                                             \
-                        BASETYPE,                                              \
-                        TYPEPREFIX,                                            \
-                        M,                                                     \
-                        N,                                                     \
-                        O,                                                     \
-                        P,                                                     \
-                        OPER,                                                  \
-                        MTYPENAME,                                             \
-                        MSHORTNAME)                                            \
+#define GM_MAT_COFACTOR(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P, \
+                        OPER, MTYPENAME, MSHORTNAME)                           \
   GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER)(const TYPENAME m)             \
   {                                                                            \
     TYPENAME v = GM_OPERNAME(SHORTNAME, zero);                                 \
@@ -2543,17 +2426,8 @@ typedef struct Quaternion
     return v;                                                                  \
   }
 
-#define GM_MAT_ADJOINT(TYPENAME,                                               \
-                       SHORTNAME,                                              \
-                       BASETYPE,                                               \
-                       TYPEPREFIX,                                             \
-                       M,                                                      \
-                       N,                                                      \
-                       O,                                                      \
-                       P,                                                      \
-                       OPER,                                                   \
-                       MTYPENAME,                                              \
-                       MSHORTNAME)                                             \
+#define GM_MAT_ADJOINT(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P,  \
+                       OPER, MTYPENAME, MSHORTNAME)                            \
   GM_CDECL TYPENAME GM_OPERNAME(SHORTNAME, OPER)(const TYPENAME m)             \
   {                                                                            \
     return GM_OPERNAME(SHORTNAME,                                              \
@@ -2593,8 +2467,8 @@ typedef struct Quaternion
       };                                                                       \
     };                                                                         \
   } TYPENAME;                                                                  \
-  typedef GM_VEC_TYPENAME(                                                     \
-    GM_VEC_DEFAULT_BASETYPE, GM_VEC_DEFAULT_TYPEPREFIX, N)                     \
+  typedef GM_VEC_TYPENAME(GM_VEC_DEFAULT_BASETYPE, GM_VEC_DEFAULT_TYPEPREFIX,  \
+                          N)                                                   \
     GM_VEC_DEFAULTNAME(GM_VEC_DEFAULT_BASETYPE, GM_VEC_DEFAULT_TYPEPREFIX, N); \
   GM_NEW_OP_1(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, __VA_ARGS__);      \
   GM_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N);                     \
@@ -2645,8 +2519,8 @@ typedef struct Quaternion
       };                                                                       \
     };                                                                         \
   } TYPENAME;                                                                  \
-  typedef GM_MAT_TYPENAME(                                                     \
-    GM_MAT_DEFAULT_BASETYPE, GM_MAT_DEFAULT_TYPEPREFIX, M, N)                  \
+  typedef GM_MAT_TYPENAME(GM_MAT_DEFAULT_BASETYPE, GM_MAT_DEFAULT_TYPEPREFIX,  \
+                          M, N)                                                \
     GM_MAT_DEFAULTNAME(GM_MAT_DEFAULT_BASETYPE, GM_MAT_DEFAULT_TYPE, M, N);    \
   GM_NEW_OP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M);                     \
   GM_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M);                     \
@@ -2749,120 +2623,31 @@ typedef struct Quaternion
   GM_MAT_LUDECOMP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, ludecomp);  \
   GM_MAT2X2_INV(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, inv);
 
-#define GM_MAT_3X3_T(TYPENAME,                                                 \
-                     SHORTNAME,                                                \
-                     VECTYPE,                                                  \
-                     BASETYPE,                                                 \
-                     TYPEPREFIX,                                               \
-                     M,                                                        \
-                     N,                                                        \
-                     O,                                                        \
-                     P,                                                        \
-                     MTYPENAME,                                                \
-                     MSHORTNAME,                                               \
-                     VTYPENAME,                                                \
-                     VSHORTNAME)                                               \
+#define GM_MAT_3X3_T(TYPENAME, SHORTNAME, VECTYPE, BASETYPE, TYPEPREFIX, M, N, \
+                     O, P, MTYPENAME, MSHORTNAME, VTYPENAME, VSHORTNAME)       \
   GM_MAT3X3_DET(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, det);         \
   GM_MAT_LUDECOMP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, ludecomp);  \
-  GM_MAT_MINOR(TYPENAME,                                                       \
-               SHORTNAME,                                                      \
-               BASETYPE,                                                       \
-               TYPEPREFIX,                                                     \
-               M,                                                              \
-               N,                                                              \
-               O,                                                              \
-               P,                                                              \
-               minor,                                                          \
-               MTYPENAME,                                                      \
-               MSHORTNAME,                                                     \
-               VTYPENAME,                                                      \
-               VSHORTNAME);                                                    \
-  GM_MAT_COFACTOR(TYPENAME,                                                    \
-                  SHORTNAME,                                                   \
-                  BASETYPE,                                                    \
-                  TYPEPREFIX,                                                  \
-                  M,                                                           \
-                  N,                                                           \
-                  O,                                                           \
-                  P,                                                           \
-                  cofactor,                                                    \
-                  MTYPENAME,                                                   \
-                  MSHORTNAME);                                                 \
-  GM_MAT_ADJOINT(TYPENAME,                                                     \
-                 SHORTNAME,                                                    \
-                 BASETYPE,                                                     \
-                 TYPEPREFIX,                                                   \
-                 M,                                                            \
-                 N,                                                            \
-                 O,                                                            \
-                 P,                                                            \
-                 adjoint,                                                      \
-                 MTYPENAME,                                                    \
-                 MSHORTNAME);                                                  \
+  GM_MAT_MINOR(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P, minor,   \
+               MTYPENAME, MSHORTNAME, VTYPENAME, VSHORTNAME);                  \
+  GM_MAT_COFACTOR(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P,       \
+                  cofactor, MTYPENAME, MSHORTNAME);                            \
+  GM_MAT_ADJOINT(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P,        \
+                 adjoint, MTYPENAME, MSHORTNAME);                              \
   GM_MAT3X3_INV(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, inv);
 
-#define GM_MAT_4X4_T(TYPENAME,                                                 \
-                     SHORTNAME,                                                \
-                     VECTYPE,                                                  \
-                     BASETYPE,                                                 \
-                     TYPEPREFIX,                                               \
-                     M,                                                        \
-                     N,                                                        \
-                     O,                                                        \
-                     P,                                                        \
-                     MTYPENAME,                                                \
-                     MSHORTNAME,                                               \
-                     VTYPENAME,                                                \
-                     VSHORTNAME)                                               \
-  GM_MAT4X4_TRS(TYPENAME,                                                      \
-                SHORTNAME,                                                     \
-                BASETYPE,                                                      \
-                TYPEPREFIX,                                                    \
-                M,                                                             \
-                N,                                                             \
-                t,                                                             \
-                MTYPENAME,                                                     \
-                MSHORTNAME,                                                    \
-                VTYPENAME,                                                     \
-                VSHORTNAME);                                                   \
+#define GM_MAT_4X4_T(TYPENAME, SHORTNAME, VECTYPE, BASETYPE, TYPEPREFIX, M, N, \
+                     O, P, MTYPENAME, MSHORTNAME, VTYPENAME, VSHORTNAME)       \
+  GM_MAT4X4_TRS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, t, MTYPENAME, \
+                MSHORTNAME, VTYPENAME, VSHORTNAME);                            \
   GM_MAT4X4_FINV(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, finv);       \
   GM_MAT4X4_DET(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, det);         \
   GM_MAT_LUDECOMP(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, ludecomp);  \
-  GM_MAT_MINOR(TYPENAME,                                                       \
-               SHORTNAME,                                                      \
-               BASETYPE,                                                       \
-               TYPEPREFIX,                                                     \
-               M,                                                              \
-               N,                                                              \
-               O,                                                              \
-               P,                                                              \
-               minor,                                                          \
-               MTYPENAME,                                                      \
-               MSHORTNAME,                                                     \
-               VTYPENAME,                                                      \
-               VSHORTNAME);                                                    \
-  GM_MAT_COFACTOR(TYPENAME,                                                    \
-                  SHORTNAME,                                                   \
-                  BASETYPE,                                                    \
-                  TYPEPREFIX,                                                  \
-                  M,                                                           \
-                  N,                                                           \
-                  O,                                                           \
-                  P,                                                           \
-                  cofactor,                                                    \
-                  MTYPENAME,                                                   \
-                  MSHORTNAME);                                                 \
-  GM_MAT_ADJOINT(TYPENAME,                                                     \
-                 SHORTNAME,                                                    \
-                 BASETYPE,                                                     \
-                 TYPEPREFIX,                                                   \
-                 M,                                                            \
-                 N,                                                            \
-                 O,                                                            \
-                 P,                                                            \
-                 adjoint,                                                      \
-                 MTYPENAME,                                                    \
-                 MSHORTNAME);                                                  \
+  GM_MAT_MINOR(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P, minor,   \
+               MTYPENAME, MSHORTNAME, VTYPENAME, VSHORTNAME);                  \
+  GM_MAT_COFACTOR(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P,       \
+                  cofactor, MTYPENAME, MSHORTNAME);                            \
+  GM_MAT_ADJOINT(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, O, P,        \
+                 adjoint, MTYPENAME, MSHORTNAME);                              \
   GM_MAT4X4_INV(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, M, N, inv);
 
 #define GM_BIN_OP_T(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N)              \
@@ -2889,91 +2674,48 @@ typedef struct Quaternion
   GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, left, {-1, 0});
 
 #define GM_VEC3_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N)           \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, right, {1, 0, 0});           \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, right,           \
+                {1, 0, 0});                                                    \
   GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, up, {0, 1, 0});  \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, forward, {0, 0, 1});         \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, left, {-1, 0, 0});           \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, down, {0, -1, 0});           \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, forward,         \
+                {0, 0, 1});                                                    \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, left,            \
+                {-1, 0, 0});                                                   \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, down,            \
+                {0, -1, 0});                                                   \
   GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, back, {0, 0, -1});
 
 #define GM_VEC4_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N)           \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, right, {1, 0, 0, 0});        \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, up, {0, 1, 0, 0});           \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, forward, {0, 0, 1, 0});      \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, left, {-1, 0, 0, 0});        \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, down, {0, -1, 0, 0});        \
-  GM_DEF_CONSTS(                                                               \
-    TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, back, {0, 0, -1, 0});
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, right,           \
+                {1, 0, 0, 0});                                                 \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, up,              \
+                {0, 1, 0, 0});                                                 \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, forward,         \
+                {0, 0, 1, 0});                                                 \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, left,            \
+                {-1, 0, 0, 0});                                                \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, down,            \
+                {0, -1, 0, 0});                                                \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, back,            \
+                {0, 0, -1, 0});
 
 #define GM_MAT4X4_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N)         \
-  GM_DEF_CONSTS(TYPENAME,                                                      \
-                SHORTNAME,                                                     \
-                BASETYPE,                                                      \
-                TYPEPREFIX,                                                    \
-                N,                                                             \
-                catmull,                                                       \
-                {-0.5,                                                         \
-                 1.5,                                                          \
-                 -1.5,                                                         \
-                 0.5,                                                          \
-                 1.0,                                                          \
-                 -2.5,                                                         \
-                 2.0,                                                          \
-                 -0.5,                                                         \
-                 -0.5,                                                         \
-                 0.0,                                                          \
-                 0.5,                                                          \
-                 0.0,                                                          \
-                 0.0,                                                          \
-                 1.0,                                                          \
-                 0.0,                                                          \
-                 0.0});                                                        \
-  GM_DEF_CONSTS(TYPENAME,                                                      \
-                SHORTNAME,                                                     \
-                BASETYPE,                                                      \
-                TYPEPREFIX,                                                    \
-                N,                                                             \
-                bezier,                                                        \
-                {-1.0,                                                         \
-                 3.0,                                                          \
-                 -3.0,                                                         \
-                 1.0,                                                          \
-                 3.0,                                                          \
-                 -6.0,                                                         \
-                 3.0,                                                          \
-                 0.0,                                                          \
-                 -3.0,                                                         \
-                 3.0,                                                          \
-                 0.0,                                                          \
-                 0.0,                                                          \
-                 1.0,                                                          \
-                 0.0,                                                          \
-                 0.0,                                                          \
-                 0.0});
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, catmull,         \
+                {-0.5, 1.5, -1.5, 0.5, 1.0, -2.5, 2.0, -0.5, -0.5, 0.0, 0.5,   \
+                 0.0, 0.0, 1.0, 0.0, 0.0});                                    \
+  GM_DEF_CONSTS(TYPENAME, SHORTNAME, BASETYPE, TYPEPREFIX, N, bezier,          \
+                {-1.0, 3.0, -3.0, 1.0, 3.0, -6.0, 3.0, 0.0, -3.0, 3.0, 0.0,    \
+                 0.0, 1.0, 0.0, 0.0, 0.0});
 
 #define X(BASETYPE, TYPEPREFIX)                                                \
   GM_ANG_T(GM_ANG_TYPENAME(BASETYPE, TYPEPREFIX),                              \
-           GM_ANG_SHORTNAME(BASETYPE, TYPEPREFIX),                             \
-           BASETYPE,                                                           \
-           TYPEPREFIX);
+           GM_ANG_SHORTNAME(BASETYPE, TYPEPREFIX), BASETYPE, TYPEPREFIX);
 GM_ANG_T_X_LIST;
 #undef X
 
 #define X(BASETYPE, TYPEPREFIX, N, ...)                                        \
   GM_VEC_T(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                           \
-           GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                          \
-           BASETYPE,                                                           \
-           TYPEPREFIX,                                                         \
-           N,                                                                  \
+           GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, N, \
            __VA_ARGS__);
 GM_VEC2F_T_X_LIST;
 GM_VEC3F_T_X_LIST;
@@ -2982,15 +2724,10 @@ GM_VEC4F_T_X_LIST;
 
 #define X(BASETYPE, TYPEPREFIX, N, ...)                                        \
   GM_VEC_T(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                           \
-           GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                          \
-           BASETYPE,                                                           \
-           TYPEPREFIX,                                                         \
-           N,                                                                  \
+           GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, N, \
            __VA_ARGS__);                                                       \
   GM_BIN_OP_T(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                        \
-              GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                       \
-              BASETYPE,                                                        \
-              TYPEPREFIX,                                                      \
+              GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, \
               N);
 GM_VEC2I_T_X_LIST;
 GM_VEC3I_T_X_LIST;
@@ -2999,52 +2736,38 @@ GM_VEC4I_T_X_LIST;
 
 #define X(BASETYPE, TYPEPREFIX, N, ...)                                        \
   GM_VEC2_CONSTS(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                     \
-                 GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                    \
-                 BASETYPE,                                                     \
-                 TYPEPREFIX,                                                   \
-                 N);
+                 GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE,          \
+                 TYPEPREFIX, N);
 GM_VEC2F_T_X_LIST;
 GM_VEC2I_T_X_LIST;
 #undef X
 
 #define X(BASETYPE, TYPEPREFIX, N, ...)                                        \
   GM_VEC3_CONSTS(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                     \
-                 GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                    \
-                 BASETYPE,                                                     \
-                 TYPEPREFIX,                                                   \
-                 N);
+                 GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE,          \
+                 TYPEPREFIX, N);
 GM_VEC3F_T_X_LIST;
 GM_VEC3I_T_X_LIST;
 #undef X
 
 #define X(BASETYPE, TYPEPREFIX, N, ...)                                        \
   GM_VEC4_CONSTS(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                     \
-                 GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                    \
-                 BASETYPE,                                                     \
-                 TYPEPREFIX,                                                   \
-                 N);
+                 GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE,          \
+                 TYPEPREFIX, N);
 GM_VEC4F_T_X_LIST;
 GM_VEC4I_T_X_LIST;
 #undef X
 
 #define X(BASETYPE, TYPEPREFIX, N, ...)                                        \
   GM_VEC3_CROSS(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                      \
-                GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                     \
-                BASETYPE,                                                      \
-                TYPEPREFIX,                                                    \
-                cross);                                                        \
+                GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE,           \
+                TYPEPREFIX, cross);                                            \
   GM_ANGLE_OP(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                        \
-              GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                       \
-              BASETYPE,                                                        \
-              TYPEPREFIX,                                                      \
-              N,                                                               \
-              angle);                                                          \
+              GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, \
+              N, angle);                                                       \
   GM_SIGNED_ANGLE_OP(GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                 \
-                     GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N),                \
-                     BASETYPE,                                                 \
-                     TYPEPREFIX,                                               \
-                     N,                                                        \
-                     sangle);
+                     GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, N), BASETYPE,      \
+                     TYPEPREFIX, N, sangle);
 GM_VEC3F_T_X_LIST;
 GM_VEC3I_T_X_LIST;
 GM_VEC4F_T_X_LIST;
@@ -3054,10 +2777,7 @@ GM_VEC4I_T_X_LIST;
 #define X(BASETYPE, TYPEPREFIX, M, N, ...)                                     \
   GM_MAT_T(GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, M, N),                        \
            GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N),                       \
-           GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                           \
-           BASETYPE,                                                           \
-           TYPEPREFIX,                                                         \
-           M,                                                                  \
+           GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, M,  \
            N);
 GM_MAT2X2F_T_X_LIST;
 GM_MAT3X3F_T_X_LIST;
@@ -3067,16 +2787,11 @@ GM_MAT4X4F_T_X_LIST;
 #define X(BASETYPE, TYPEPREFIX, M, N, ...)                                     \
   GM_MAT_T(GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, M, N),                        \
            GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N),                       \
-           GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                           \
-           BASETYPE,                                                           \
-           TYPEPREFIX,                                                         \
-           M,                                                                  \
+           GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, M,  \
            N);                                                                 \
   GM_BIN_OP_T(GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, M, N),                     \
-              GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N),                    \
-              BASETYPE,                                                        \
-              TYPEPREFIX,                                                      \
-              M);
+              GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N), BASETYPE,          \
+              TYPEPREFIX, M);
 GM_MAT2X2I_T_X_LIST;
 GM_MAT3X3I_T_X_LIST;
 GM_MAT4X4I_T_X_LIST;
@@ -3085,11 +2800,8 @@ GM_MAT4X4I_T_X_LIST;
 #define X(BASETYPE, TYPEPREFIX, M, N, O, P)                                    \
   GM_MAT_2X2_T(GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, M, N),                    \
                GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N),                   \
-               GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                       \
-               BASETYPE,                                                       \
-               TYPEPREFIX,                                                     \
-               M,                                                              \
-               N);
+               GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, \
+               M, N);
 GM_MAT2X2I_T_X_LIST;
 GM_MAT2X2F_T_X_LIST;
 #undef X
@@ -3097,14 +2809,8 @@ GM_MAT2X2F_T_X_LIST;
 #define X(BASETYPE, TYPEPREFIX, M, N, O, P)                                    \
   GM_MAT_3X3_T(GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, M, N),                    \
                GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N),                   \
-               GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                       \
-               BASETYPE,                                                       \
-               TYPEPREFIX,                                                     \
-               M,                                                              \
-               N,                                                              \
-               O,                                                              \
-               P,                                                              \
-               GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, O, P),                    \
+               GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, \
+               M, N, O, P, GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, O, P),        \
                GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, O, P),                   \
                GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, P),                       \
                GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, P));
@@ -3115,14 +2821,8 @@ GM_MAT3X3I_T_X_LIST;
 #define X(BASETYPE, TYPEPREFIX, M, N, O, P)                                    \
   GM_MAT_4X4_T(GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, M, N),                    \
                GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N),                   \
-               GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                       \
-               BASETYPE,                                                       \
-               TYPEPREFIX,                                                     \
-               M,                                                              \
-               N,                                                              \
-               O,                                                              \
-               P,                                                              \
-               GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, O, P),                    \
+               GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, \
+               M, N, O, P, GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, O, P),        \
                GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, O, P),                   \
                GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, P),                       \
                GM_VEC_SHORTNAME(BASETYPE, TYPEPREFIX, P));
@@ -3132,20 +2832,15 @@ GM_MAT4X4I_T_X_LIST;
 
 #define X(BASETYPE, TYPEPREFIX, M, N, O, P)                                    \
   GM_MAT4X4_CONSTS(GM_MAT_TYPENAME(BASETYPE, TYPEPREFIX, M, N),                \
-                   GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N),               \
-                   BASETYPE,                                                   \
-                   TYPEPREFIX,                                                 \
-                   N);
+                   GM_MAT_SHORTNAME(BASETYPE, TYPEPREFIX, M, N), BASETYPE,     \
+                   TYPEPREFIX, N);
 GM_MAT4X4F_T_X_LIST;
 #undef X
 
 #define X(BASETYPE, TYPEPREFIX, N, ...)                                        \
   GM_QUAT_T(GM_QUAT_TYPENAME(BASETYPE, TYPEPREFIX),                            \
             GM_QUAT_SHORTNAME(BASETYPE, TYPEPREFIX),                           \
-            GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N),                          \
-            BASETYPE,                                                          \
-            TYPEPREFIX,                                                        \
-            N,                                                                 \
+            GM_VEC_TYPENAME(BASETYPE, TYPEPREFIX, N), BASETYPE, TYPEPREFIX, N, \
             __VA_ARGS__);
 GM_QUAT_T_X_LIST;
 #undef X
