@@ -17,7 +17,7 @@ cd out
 cp -r ../res res/
 
 declare -A TEST_ARGS
-TEST_ARGS["args"]="-something2=1 -a -c cool"
+TEST_ARGS["args"]="-something2=1 -a -c sine.wav"
 
 for APP in "$@"; do
     clang "../tests/$APP.c" \

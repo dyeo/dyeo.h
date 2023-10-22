@@ -98,6 +98,7 @@ typedef char *dirpath;
   X(dirpath)                                                                   \
   ARGTYPES_X_LIST_CUSTOM
 
+#define _ARGFMT(TYPE) _##TYPE##_fmt
 #define _bool_fmt "%x"
 #define _char_fmt "%c"
 #define _short_fmt "%d"
@@ -109,9 +110,10 @@ typedef char *dirpath;
 #define _filepath_fmt "%s"
 #define _dirpath_fmt "%s"
 
+#define _ARGTYPE(TYPE) _##TYPE##_type
 typedef enum ARGTYPE
 {
-#define X(TYPE) TYPE##arg,
+#define X(TYPE) _ARGTYPE(TYPE),
   ARGTYPES_X_LIST
 #undef X
 } ARGTYPE;
@@ -167,13 +169,14 @@ typedef struct ARGS
                  0, 0)
 
 #define args_arg(ARGS, NAME, TYPE, ...)                                        \
-  ((TYPE *) _args_common(ARGS, #NAME, TYPE##arg, false, false, __VA_ARGS__))
+  ((TYPE *) _args_common(ARGS, #NAME, _ARGTYPE(TYPE), false, false,            \
+                         __VA_ARGS__))
 
 #define args_flag(ARGS, NAME, ...)                                             \
-  ((bool *) _args_common(ARGS, #NAME, boolarg, true, false, __VA_ARGS__))
+  ((bool *) _args_common(ARGS, #NAME, _bool_type, true, false, __VA_ARGS__))
 
 #define args_pop(ARGS, NAME, TYPE, ...)                                        \
-  ((TYPE *) _args_common(ARGS, #NAME, TYPE##arg, false, true, __VA_ARGS__))
+  ((TYPE *) _args_common(ARGS, #NAME, _ARGTYPE(TYPE), false, true, __VA_ARGS__))
 
 extern ARGS _args_new_impl();
 
@@ -319,7 +322,7 @@ bool _args_set_value(ARG *a, char *xval)
       return false;
     }
 #define X(TYPE)                                                                \
-  case TYPE##arg:                                                              \
+  case _ARGTYPE(TYPE):                                                         \
   {                                                                            \
     *((TYPE *) a->value) = _args_get_##TYPE(xval);                             \
     return true;                                                               \
@@ -350,10 +353,10 @@ void _arg_help(FILE *const s, ARG a)
     switch (a.type)
     {
 #define X(TYPE)                                                                \
-  case TYPE##arg:                                                              \
+  case _ARGTYPE(TYPE):                                                         \
     if (a.defaultValue != 0)                                                   \
     {                                                                          \
-      printf(" (default: "_##TYPE##_fmt ")",                                   \
+      printf(" (default: "_ARGFMT(TYPE) ")",                                   \
              ((TYPE) ((uintptr_t) a.defaultValue)));                           \
     }                                                                          \
     break;
