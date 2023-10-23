@@ -7,7 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 #ifdef _WIN32
 #define _CRT_SECURE_NO_WARNINGS
 #define strdup _strdup
@@ -22,6 +21,17 @@ extern "C" {
 
 #define CONCAT(A, B) _CONCAT(A, B)
 #define _CONCAT(A, B) A##B
+
+#if defined(__GNUC__) || defined(__clang__)
+  #define _ARGC(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+  #define ARGC(...) _ARGC(_, ## __VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+#else
+  #define _ARGC(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+  #define ARGC(...) _ARGC(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+#endif
+
+#define F_TO_O(d) (*(oword *) &(d))
+#define O_TO_F(i) (*(double *) &(i))
 
 typedef uint8_t word;
 typedef uint16_t dword;
@@ -59,7 +69,7 @@ extern void cpu_run(cpu c);
 extern void cpu_step(cpu c);
 
 #define _OPS_X_LIST                                                            \
-  X(nop, void) /* noop */                                                      \
+  X(nop) /* noop */                                                            \
   /**/                                                                         \
   X(ldv, oword, word) /* load val to reg */                                    \
   X(ldm, oword, word) /* load mem to reg */                                    \
@@ -96,7 +106,7 @@ extern void cpu_step(cpu c);
   X(jpn, word, oword) /* jump if reg != 0 to addr */                           \
   X(sys, word)        /* call system oper  */                                  \
   /**/                                                                         \
-  X(hlt, void) /* end the execution */
+  X(hlt) /* end the execution */
 
 #define CPU_DEFAULT_BUFLEN 32
 
@@ -118,21 +128,22 @@ void (*_op_fptr[])(cpu) = {
 #undef X
 };
 
-word _op_lens[CPU_OPS_COUNT][3] = {
-#define void 0
+word _op_lens[CPU_OPS_COUNT][4] = {
 #define word 1
 #define dword 2
 #define qword 4
 #define oword 8
-#define X(NAME, ...) {__VA_ARGS__, 0},
+#define X(NAME, ...) {ARGC(__VA_ARGS__), __VA_ARGS__},
   _OPS_X_LIST
 #undef X
-#undef void
 #undef word
 #undef dword
 #undef qword
 #undef oword
 };
+
+#undef ARGC
+#undef _ARGC
 
 const char *_op_toks[] = {
 #define X(NAME, ...) #NAME,
@@ -223,12 +234,7 @@ typedef enum cpu_sysop
 #define int_2_t dword
 #define int_1_t word
 
-#define CPU_GET(TYPE, NAME)                                                    \
-  TYPE NAME;                                                                   \
-  do                                                                           \
-  {                                                                            \
-    NAME = CPU_POP(c, TYPE);                                                   \
-  } while (0)
+#define CPU_GET(TYPE, NAME) TYPE NAME = CPU_POP(c, TYPE)
 
 static inline const char *strnchr(const char *s, const char c, size_t n)
 {
@@ -311,9 +317,9 @@ word *asm_to_words(const char *code, oword *wlen)
         *wlen += 1;
         word *arglens = _op_lens[i];
         int j         = 0;
-        while (arglens[j] != 0)
+        while (j < arglens[0])
         {
-          oword alen = arglens[j];
+          oword alen = arglens[j + 1];
           if (*wlen + alen > wordc)
           {
             words = realloc(words, (wordc *= 2) * sizeof(word));
