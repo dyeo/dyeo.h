@@ -23,11 +23,11 @@ extern "C" {
 #define _CONCAT(A, B) A##B
 
 #if defined(__GNUC__) || defined(__clang__)
-  #define _ARGC(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
-  #define ARGC(...) _ARGC(_, ## __VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+#define _ARGC(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define ARGC(...) _ARGC(_, ##__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
 #else
-  #define _ARGC(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
-  #define ARGC(...) _ARGC(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+#define _ARGC(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
+#define ARGC(...) _ARGC(__VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
 #endif
 
 #define F_TO_O(d) (*(oword *) &(d))
@@ -319,6 +319,10 @@ word *asm_to_words(const char *code, oword *wlen)
         int j         = 0;
         while (j < arglens[0])
         {
+          if (arglens[j] == 0)
+          {
+            break;
+          }
           oword alen = arglens[j + 1];
           if (*wlen + alen > wordc)
           {
