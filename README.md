@@ -1,5 +1,7 @@
 # dyeo.h - single header c libraries
 
+## Main Libraries
+
 - [args.h](args.h) - argparse-style argument parser
 - [cor.h](cor.h) - coroutines
 - [dt.h](dt.h) - datatag serializer/deserializer (superset of JSON)
@@ -10,3 +12,7 @@
 - [test.h](test.h) - unit testing
 - [udp.h](udp.h) - cross-platform udp networking
 - [wav.h](wav.h) - .wav file encoding and decoding
+
+## Personal Projects
+
+- [cpu.h](cpu.h) - simple cpu vm for education
