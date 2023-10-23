@@ -4,14 +4,12 @@
 #define MEM_SIZE 1024
 
 const char *assembly =
-  " ldv h 0"
-  " sys 0"
-  " ldv i 0"
-  " sys 0"
-  " ldv ! 0"
-  " sys 0"
-  " ldv 10 0"
-  " sys 0"
+  " ldv 1 0"
+  " ldv 1 1"
+  " add 1 0"
+  " add 1 0"
+  " add 1 0"
+  " sys 1"
   " hlt";
 
 int main()

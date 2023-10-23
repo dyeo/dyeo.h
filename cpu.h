@@ -73,6 +73,10 @@ extern void cpu_step(cpu c);
   X(mul, word, word)  /*reg1 = reg1 * reg0*/                                   \
   X(div, word, word)  /*reg1 = reg1 / reg0*/                                   \
   X(mod, word, word)  /*reg1 = reg1 % reg0*/                                   \
+  X(neg, word)        /*reg0 = -reg0*/                                         \
+  X(and, word, word)  /*reg1 = reg1 & reg0*/                                   \
+  X(or, word, word)  /*reg1 = reg1 | reg0*/                                   \
+  X(xor, word, word)  /*reg1 = reg1 ^ reg0*/                                   \
   X(not, word)        /*reg0 = ~reg0*/                                         \
   X(lt, word, word)   /*reg1 = reg1 < reg0*/                                   \
   X(le, word, word)   /*reg1 = reg1 <= reg0*/                                  \
@@ -187,21 +191,6 @@ typedef enum cpu_sysop
 #define int_2_t dword
 #define int_1_t word
 
-static inline char *_strsub(const char *str, size_t i, size_t len)
-{    if (!str) {
-        return NULL;
-    }
-    size_t slen = strlen(str);
-    size_t sublen = (i + len > slen) ? (slen - i) : len;
-    char *substr = (char *) malloc(sublen + 1);
-    if (!substr) {
-        return NULL;
-    }
-    strncpy(substr, str + i, sublen);
-    substr[sublen] = '\0';
-    return substr;
-}
-
 void _asm_skip_comment(const char *code, oword *i)
 {
   if (code[*i] == ';')
@@ -223,25 +212,22 @@ void _asm_skip_ws(const char *code, oword *i)
   _asm_skip_comment(code, i);
 }
 
-char *_asm_next_tok(const char *code, oword *i)
+typedef struct
+{
+  const char *start;
+  oword length;
+} _asmtok;
+
+_asmtok _asm_next_tok(const char *code, oword *i)
 {
   _asm_skip_ws(code, i);
-  if (!code || !*code || !i)
+  _asmtok tok = {&code[*i], 0};
+  while (code[*i] && !isspace(code[*i]) && code[*i] != ';')
   {
-    fprintf(stderr, "ERROR: couldn't get asm argument");
-    return NULL;
+    tok.length++;
+    *i += 1;
   }
-  oword j = *i;
-  while (code[j] && !isspace(code[j]) && code[j] != ';')
-  {
-    j++;
-  }
-  oword rlen = j - *i;
-  char *res  = malloc(rlen + 1);
-  strncpy(res, &(code)[*i], rlen);
-  res[rlen] = '\0';
-  *i += rlen;
-  return res;
+  return tok;
 }
 
 word *asm_to_words(const char *code, oword *wlen)
@@ -251,20 +237,20 @@ word *asm_to_words(const char *code, oword *wlen)
     return NULL;
   }
   oword wordc = CPU_DEFAULT_BUFLEN;
-  word *words = malloc(wordc);
+  word *words = malloc(wordc * sizeof(word));
   oword a     = 0;
   while (code[a])
   {
-    char *tok = _asm_next_tok(code, &a);
+    _asmtok tok = _asm_next_tok(code, &a);
     for (int i = 0; i < CPU_OPS_COUNT; ++i)
     {
-      if (strcmp(tok, _op_toks[i]) == 0)
+      if (strncmp(tok.start, _op_toks[i], tok.length) == 0)
       {
         if (*wlen + 1 > wordc)
         {
-          words = realloc(words, (wordc *= 2));
+          words = realloc(words, (wordc *= 2) * sizeof(word));
         }
-        *(words + *wlen) = (cpu_op) i;
+        *(words + *wlen) = (word) i;
         *wlen += 1;
         word *arglens = _op_lens[i];
         int j         = 0;
@@ -273,25 +259,23 @@ word *asm_to_words(const char *code, oword *wlen)
           oword alen = arglens[j];
           if (*wlen + alen > wordc)
           {
-            words = realloc(words, (wordc *= 2));
+            words = realloc(words, (wordc *= 2) * sizeof(word));
           }
-          char *atok = _asm_next_tok(code, &a);
-          char *endp = NULL;
-          oword val  = strtoll(atok, &endp, 0);
-          if (!isdigit(atok[0]) && isascii(atok[0]))
+          _asmtok atok = _asm_next_tok(code, &a);
+          char *endp          = NULL;
+          oword val           = strtoll(atok.start, &endp, 0);
+          if (!isdigit(atok.start[0]) && isascii(atok.start[0]))
           {
-            val = (oword) atok[0];
+            val = (oword) atok.start[0];
           }
           _cpu_push(words, *wlen, val, alen);
           *wlen += alen;
-          free(atok);
           j++;
         }
       }
     }
-    free(tok);
   }
-  words        = realloc(words, *wlen + 1);
+  words        = realloc(words, (*wlen + 1) * sizeof(word));
   words[*wlen] = 0;
   return words;
 }
@@ -432,6 +416,12 @@ void _op_mod(cpu c)
   c->reg[dReg] = c->reg[dReg] % c->reg[sReg];
 }
 
+void _op_neg(cpu c)
+{
+  word reg    = cpu_pop(c, word);
+  c->reg[reg] = -c->reg[reg];
+}
+
 void _op_lt(cpu c)
 {
   word sReg    = cpu_pop(c, word);
@@ -472,6 +462,27 @@ void _op_gt(cpu c)
   word sReg    = cpu_pop(c, word);
   word dReg    = cpu_pop(c, word);
   c->reg[dReg] = c->reg[dReg] > c->reg[sReg];
+}
+
+void _op_and(cpu c)
+{
+  word sReg    = cpu_pop(c, word);
+  word dReg    = cpu_pop(c, word);
+  c->reg[dReg] = c->reg[dReg] & c->reg[sReg];
+}
+
+void _op_or(cpu c)
+{
+  word sReg    = cpu_pop(c, word);
+  word dReg    = cpu_pop(c, word);
+  c->reg[dReg] = c->reg[dReg] | c->reg[sReg];
+}
+
+void _op_xor(cpu c)
+{
+  word sReg    = cpu_pop(c, word);
+  word dReg    = cpu_pop(c, word);
+  c->reg[dReg] = c->reg[dReg] ^ c->reg[sReg];
 }
 
 void _op_not(cpu c)
