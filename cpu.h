@@ -20,7 +20,6 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-
 #define CONCAT(A, B) _CONCAT(A, B)
 #define _CONCAT(A, B) A##B
 
@@ -302,7 +301,7 @@ bool _is_tok_int(const char *start, const size_t length)
   {
     i++;
   }
-  return i == length;  
+  return i == length;
 }
 
 word *asm_to_words(const char *code, oword *wlen)
@@ -341,16 +340,25 @@ word *asm_to_words(const char *code, oword *wlen)
             words = realloc(words, (wordc *= 2) * sizeof(word));
           }
           _asmtok atok = _asm_next_tok(code, &a);
-          oword oval   = strtoll(atok.start, NULL, 0);
-          char *endp   = NULL;
-          double dval  = strtold(atok.start, &endp);
-          if (!isdigit(atok.start[0]) && isascii(atok.start[0]))
+          bool isint  = _is_tok_int(atok.start, atok.length);
+          oword oval  = strtoll(atok.start, NULL, 0);
+          char *endp  = NULL;
+          double dval = strtold(atok.start, &endp);
+          if (!isint)
           {
-            oval = (oword) atok.start[0];
-          }
-          else if (!_is_tok_int(atok.start, atok.length) && endp != atok.start)
-          {
-            oval = F_TO_O(dval);
+            if (atok.length == 1 && isascii(atok.start[0]))
+            {
+              oval = (oword) atok.start[0];
+            }
+            else if (endp != atok.start)
+            {
+              oval = F_TO_O(dval);
+            }
+            else
+            {
+              fprintf(stderr, "ERROR: Invalid token '%.*s'\n",
+                      (int) atok.length, atok.start);
+            }
           }
           _CPU_PUSH(words, *wlen, oval, alen);
           *wlen += alen;
