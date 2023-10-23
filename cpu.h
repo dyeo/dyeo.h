@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 #include <ctype.h>
+#include <math.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -58,37 +59,44 @@ extern void cpu_run(cpu c);
 extern void cpu_step(cpu c);
 
 #define _OPS_X_LIST                                                            \
-  X(nop, void)        /*noop*/                                                 \
-  X(ldv, oword, word) /*load val to reg*/                                      \
-  X(ldm, oword, word) /*load mem to reg*/                                      \
-  X(ldr, word, word)  /*load reg to reg*/                                      \
-  X(ldsp, word)       /*load stack ptr to reg*/                                \
-  X(ldip, word)       /*load inst ptr to reg*/                                 \
-  X(stm, word, oword) /*store reg to mem*/                                     \
-  X(pop, word)        /*pop stack to reg*/                                     \
-  X(peek, word)       /*peek stack to reg*/                                    \
-  X(push, word)       /*push reg to stack*/                                    \
-  X(add, word, word)  /*reg1 = reg1 + reg0*/                                   \
-  X(sub, word, word)  /*reg1 = reg1 - reg0*/                                   \
-  X(mul, word, word)  /*reg1 = reg1 * reg0*/                                   \
-  X(div, word, word)  /*reg1 = reg1 / reg0*/                                   \
-  X(mod, word, word)  /*reg1 = reg1 % reg0*/                                   \
-  X(neg, word)        /*reg0 = -reg0*/                                         \
-  X(and, word, word)  /*reg1 = reg1 & reg0*/                                   \
-  X(or, word, word)  /*reg1 = reg1 | reg0*/                                   \
-  X(xor, word, word)  /*reg1 = reg1 ^ reg0*/                                   \
-  X(not, word)        /*reg0 = ~reg0*/                                         \
-  X(lt, word, word)   /*reg1 = reg1 < reg0*/                                   \
-  X(le, word, word)   /*reg1 = reg1 <= reg0*/                                  \
-  X(eq, word, word)   /*reg1 = reg1 == reg0*/                                  \
-  X(ne, word, word)   /*reg1 = reg1 != reg0*/                                  \
-  X(ge, word, word)   /*reg1 = reg1 >= reg0*/                                  \
-  X(gt, word, word)   /*reg1 = reg1 > reg0*/                                   \
-  X(jp, oword)        /*jump inst ptr to addr*/                                \
-  X(jpz, word, oword) /*jump if reg == 0 to addr*/                             \
-  X(jpn, word, oword) /*jump if reg != 0 to addr*/                             \
-  X(sys, word)        /*call system oper */                                    \
-  X(hlt, void)        /*end the execution*/
+  X(nop, void) /* noop */                                                      \
+  /**/                                                                         \
+  X(ldv, oword, word) /* load val to reg */                                    \
+  X(ldm, oword, word) /* load mem to reg */                                    \
+  X(ldr, word, word)  /* load reg to reg */                                    \
+  X(ldsp, word)       /* load stack ptr to reg */                              \
+  X(ldip, word)       /* load inst ptr to reg */                               \
+  X(stm, word, oword) /* store reg to mem */                                   \
+  /**/                                                                         \
+  X(pop, word)  /* pop stack to reg */                                         \
+  X(peek, word) /* peek stack to reg */                                        \
+  X(push, word) /* push reg to stack */                                        \
+  /**/                                                                         \
+  X(add, word, word) /* reg1 = reg1 + reg0 */                                  \
+  X(sub, word, word) /* reg1 = reg1 - reg0 */                                  \
+  X(mul, word, word) /* reg1 = reg1 * reg0 */                                  \
+  X(div, word, word) /* reg1 = reg1 / reg0 */                                  \
+  X(mod, word, word) /* reg1 = reg1 % reg0 */                                  \
+  X(neg, word)       /* reg0 = -reg0 */                                        \
+  /**/                                                                         \
+  X(and, word, word) /* reg1 = reg1 & reg0 */                                  \
+  X(or, word, word)  /* reg1 = reg1 | reg0 */                                  \
+  X(xor, word, word) /* reg1 = reg1 ^ reg0 */                                  \
+  X(not, word)       /* reg0 = ~reg0 */                                        \
+  /**/                                                                         \
+  X(lt, word, word) /* reg1 = reg1 < reg0 */                                   \
+  X(le, word, word) /* reg1 = reg1 <= reg0 */                                  \
+  X(eq, word, word) /* reg1 = reg1 == reg0 */                                  \
+  X(ne, word, word) /* reg1 = reg1 != reg0 */                                  \
+  X(ge, word, word) /* reg1 = reg1 >= reg0 */                                  \
+  X(gt, word, word) /* reg1 = reg1 > reg0 */                                   \
+  /**/                                                                         \
+  X(jp, oword)        /* jump inst ptr to addr */                              \
+  X(jpz, word, oword) /* jump if reg == 0 to addr */                           \
+  X(jpn, word, oword) /* jump if reg != 0 to addr */                           \
+  X(sys, word)        /* call system oper  */                                  \
+  /**/                                                                         \
+  X(hlt, void) /* end the execution */
 
 #define CPU_DEFAULT_BUFLEN 32
 
@@ -136,6 +144,7 @@ typedef enum cpu_sysop
 {
   sys_putc,
   sys_puti,
+  sys_putf,
   CPU_SYSOPS_COUNT
 } cpu_sysop;
 
@@ -149,10 +158,12 @@ typedef enum cpu_sysop
 #ifndef _CPU_C
 #define _CPU_C
 
-#define cpu_pop(CPU, TYPE) CONCAT(_cpu_pop_, TYPE)(CPU)
+#define CPU_POP(CPU, TYPE) CONCAT(_CPU_POP_, TYPE)(CPU)
+#define CPU_PEEK(CPU, TYPE) CONCAT(_CPU_PEEK_, TYPE)(CPU)
 
-#define _cpu_pop_8 _cpu_pop_oword
-#define _cpu_pop_oword(CPU)                                                    \
+#define _CPU_POP_8 _CPU_POP_oword
+#define _CPU_PEEK_8 _CPU_PEEK_oword
+#define _CPU_POP_oword(CPU)                                                    \
   (((oword) (CPU)->mem[(CPU)->ip++] << 56) |                                   \
    ((oword) (CPU)->mem[(CPU)->ip++] << 48) |                                   \
    ((oword) (CPU)->mem[(CPU)->ip++] << 40) |                                   \
@@ -161,23 +172,44 @@ typedef enum cpu_sysop
    ((oword) (CPU)->mem[(CPU)->ip++] << 16) |                                   \
    ((oword) (CPU)->mem[(CPU)->ip++] << 8) |                                    \
    ((oword) (CPU)->mem[(CPU)->ip++] << 0))
+#define _CPU_PEEK_oword(CPU)                                                   \
+  (((oword) (CPU)->mem[(CPU)->ip] << 56) |                                     \
+   ((oword) (CPU)->mem[(CPU)->ip + 1] << 48) |                                 \
+   ((oword) (CPU)->mem[(CPU)->ip + 2] << 40) |                                 \
+   ((oword) (CPU)->mem[(CPU)->ip + 3] << 32) |                                 \
+   ((oword) (CPU)->mem[(CPU)->ip + 4] << 24) |                                 \
+   ((oword) (CPU)->mem[(CPU)->ip + 5] << 16) |                                 \
+   ((oword) (CPU)->mem[(CPU)->ip + 6] << 8) |                                  \
+   ((oword) (CPU)->mem[(CPU)->ip + 7] << 0))
 
-#define _cpu_pop_4 _cpu_pop_qword
-#define _cpu_pop_qword(CPU)                                                    \
+#define _CPU_POP_4 _CPU_POP_qword
+#define _CPU_PEEK_4 _CPU_PEEK_qword
+#define _CPU_POP_qword(CPU)                                                    \
   (((qword) (CPU)->mem[(CPU)->ip++] << 24) |                                   \
    ((qword) (CPU)->mem[(CPU)->ip++] << 16) |                                   \
    ((qword) (CPU)->mem[(CPU)->ip++] << 8) |                                    \
    ((qword) (CPU)->mem[(CPU)->ip++] << 0))
+#define _CPU_PEEK_qword(CPU)                                                   \
+  (((qword) (CPU)->mem[(CPU)->ip] << 24) |                                     \
+   ((qword) (CPU)->mem[(CPU)->ip + 1] << 16) |                                 \
+   ((qword) (CPU)->mem[(CPU)->ip + 2] << 8) |                                  \
+   ((qword) (CPU)->mem[(CPU)->ip + 3] << 0))
 
-#define _cpu_pop_2 _cpu_pop_dword
-#define _cpu_pop_dword(CPU)                                                    \
+#define _CPU_POP_2 _CPU_POP_dword
+#define _CPU_PEEK_2 _CPU_PEEK_dword
+#define _CPU_POP_dword(CPU)                                                    \
   (((dword) (CPU)->mem[(CPU)->ip++] << 8) |                                    \
    ((dword) (CPU)->mem[(CPU)->ip++] << 0))
+#define _CPU_PEEK_dword(CPU)                                                   \
+  (((dword) (CPU)->mem[(CPU)->ip] << 8) |                                      \
+   ((dword) (CPU)->mem[(CPU)->ip + 1] << 0))
 
-#define _cpu_pop_1 _cpu_pop_word
-#define _cpu_pop_word(C) ((word) (C)->mem[(C)->ip++])
+#define _CPU_POP_1 _CPU_POP_word
+#define _CPU_PEEK_1 _CPU_PEEK_word
+#define _CPU_POP_word(C) ((word) (C)->mem[(C)->ip++])
+#define _CPU_PEEK_word(C) ((word) (C)->mem[(C)->ip])
 
-#define _cpu_push(ARR, INDEX, VALUE, LEN)                                      \
+#define _CPU_PUSH(ARR, INDEX, VALUE, LEN)                                      \
   do                                                                           \
   {                                                                            \
     for (oword i = 0; i < LEN; i++)                                            \
@@ -190,6 +222,31 @@ typedef enum cpu_sysop
 #define int_4_t qword
 #define int_2_t dword
 #define int_1_t word
+
+#define CPU_GET(TYPE, NAME)                                                    \
+  TYPE NAME;                                                                   \
+  do                                                                           \
+  {                                                                            \
+    NAME = CPU_POP(c, TYPE);                                                   \
+  } while (0)
+
+static inline const char *strnchr(const char *s, const char c, size_t n)
+{
+  if (!s || n == 0)
+  {
+    return NULL;
+  }
+  size_t i = 0;
+  if (!s[i] || s[i] != c)
+  {
+    return NULL;
+  }
+  while (s[i] && i < n && s[i] != c)
+  {
+    i++;
+  }
+  return s + i > s ? s + i : NULL;
+}
 
 void _asm_skip_comment(const char *code, oword *i)
 {
@@ -244,7 +301,7 @@ word *asm_to_words(const char *code, oword *wlen)
     _asmtok tok = _asm_next_tok(code, &a);
     for (int i = 0; i < CPU_OPS_COUNT; ++i)
     {
-      if (strncmp(tok.start, _op_toks[i], tok.length) == 0)
+      if (strncmp(tok.start, _op_toks[i], strlen(_op_toks[i])) == 0)
       {
         if (*wlen + 1 > wordc)
         {
@@ -262,13 +319,17 @@ word *asm_to_words(const char *code, oword *wlen)
             words = realloc(words, (wordc *= 2) * sizeof(word));
           }
           _asmtok atok = _asm_next_tok(code, &a);
-          char *endp          = NULL;
-          oword val           = strtoll(atok.start, &endp, 0);
+          char *endp   = NULL;
+          oword val    = strtoll(atok.start, &endp, 0);
+          if (strnchr(atok.start, '.', atok.length))
+          {
+            val = (oword) strtold(atok.start, &endp);
+          }
           if (!isdigit(atok.start[0]) && isascii(atok.start[0]))
           {
             val = (oword) atok.start[0];
           }
-          _cpu_push(words, *wlen, val, alen);
+          _CPU_PUSH(words, *wlen, val, alen);
           *wlen += alen;
           j++;
         }
@@ -297,8 +358,6 @@ cpu cpu_new(oword memc, word *mem)
   return c;
 }
 
-#define _pop_word
-
 void cpu_run(cpu c)
 {
   while (c->ip != c->memc)
@@ -309,7 +368,7 @@ void cpu_run(cpu c)
 
 void cpu_step(cpu c)
 {
-  word op = cpu_pop(c, word);
+  CPU_GET(word, op);
   _op_fptr[op](c);
 }
 
@@ -325,195 +384,196 @@ void _op_hlt(cpu c)
 
 void _op_ldv(cpu c)
 {
-  oword val   = cpu_pop(c, oword);
-  word reg    = cpu_pop(c, word);
+  CPU_GET(oword, val);
+  CPU_GET(word, reg);
   c->reg[reg] = val;
 }
 
 void _op_ldm(cpu c)
 {
-  oword addr  = cpu_pop(c, oword);
-  word reg    = cpu_pop(c, word);
+  CPU_GET(oword, addr);
+  CPU_GET(word, reg);
   c->reg[reg] = c->mem[addr];
 }
 
 void _op_ldr(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[sReg];
 }
 
 void _op_ldsp(cpu c)
 {
-  word reg    = cpu_pop(c, word);
+  CPU_GET(word, reg);
   c->reg[reg] = c->sp;
 }
 
 void _op_ldip(cpu c)
 {
-  word reg    = cpu_pop(c, word);
+  CPU_GET(word, reg);
   c->reg[reg] = c->ip;
 }
 
 void _op_stm(cpu c)
 {
-  word reg     = cpu_pop(c, word);
-  oword addr   = cpu_pop(c, oword);
+  CPU_GET(word, reg);
+  CPU_GET(oword, addr);
   c->mem[addr] = c->reg[reg];
 }
 
 void _op_pop(cpu c)
 {
-  word reg    = cpu_pop(c, word);
+  CPU_GET(word, reg);
   c->reg[reg] = c->stk[c->sp--];
 }
 
 void _op_peek(cpu c)
 {
-  word reg    = cpu_pop(c, word);
+  CPU_GET(word, reg);
   c->reg[reg] = c->stk[c->sp];
 }
 
 void _op_push(cpu c)
 {
-  word reg        = cpu_pop(c, word);
+  CPU_GET(word, reg);
   c->stk[c->sp++] = c->reg[reg];
 }
 
 void _op_add(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] + c->reg[sReg];
 }
 
 void _op_sub(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] - c->reg[sReg];
 }
 
 void _op_mul(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] * c->reg[sReg];
 }
 
 void _op_div(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] / c->reg[sReg];
 }
 
 void _op_mod(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] % c->reg[sReg];
 }
 
 void _op_neg(cpu c)
 {
-  word reg    = cpu_pop(c, word);
+  CPU_GET(word, reg);
   c->reg[reg] = -c->reg[reg];
 }
 
 void _op_lt(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] < c->reg[sReg];
 }
 
 void _op_le(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] <= c->reg[sReg];
 }
 
 void _op_eq(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] == c->reg[sReg];
 }
 
 void _op_ne(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] != c->reg[sReg];
 }
 
 void _op_ge(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] >= c->reg[sReg];
 }
 
 void _op_gt(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] > c->reg[sReg];
 }
 
 void _op_and(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] & c->reg[sReg];
 }
 
 void _op_or(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] | c->reg[sReg];
 }
 
 void _op_xor(cpu c)
 {
-  word sReg    = cpu_pop(c, word);
-  word dReg    = cpu_pop(c, word);
+  CPU_GET(word, sReg);
+  CPU_GET(word, dReg);
   c->reg[dReg] = c->reg[dReg] ^ c->reg[sReg];
 }
 
 void _op_not(cpu c)
 {
-  word reg    = cpu_pop(c, word);
+  CPU_GET(word, reg);
   c->reg[reg] = ~c->reg[reg];
 }
 
 void _op_jp(cpu c)
 {
-  oword addr = cpu_pop(c, oword);
-  c->ip      = addr;
+  CPU_GET(oword, addr);
+  c->ip = addr;
 }
 
 void _op_jpz(cpu c)
 {
-  word reg   = cpu_pop(c, word);
-  oword addr = cpu_pop(c, oword);
-  c->ip      = c->reg[reg] == 0 ? addr : c->ip;
+  CPU_GET(word, reg);
+  CPU_GET(oword, addr);
+  c->ip = c->reg[reg] == 0 ? addr : c->ip;
 }
 
 void _op_jpn(cpu c)
 {
-  word reg   = cpu_pop(c, word);
-  oword addr = cpu_pop(c, oword);
-  c->ip      = c->reg[reg] == 1 ? addr : c->ip;
+  CPU_GET(word, reg);
+  CPU_GET(oword, addr);
+  c->ip = c->reg[reg] == 1 ? addr : c->ip;
 }
 
 void _op_sys(cpu c)
 {
-  word call = cpu_pop(c, word);
+  CPU_GET(word, call);
+  oword reg0 = c->reg[0];
   switch (call)
   {
     default:
@@ -521,12 +581,13 @@ void _op_sys(cpu c)
       exit(1);
       break;
     case sys_putc:
-      putc((char) c->reg[0], stdout);
+      fprintf(stdout, "%c", (char) reg0);
       break;
     case sys_puti:
-      fprintf(stdout, "%llu", c->reg[0]);
+      fprintf(stdout, "%llu", reg0);
       break;
   }
+  fflush(stdout);
 }
 
 #endif
