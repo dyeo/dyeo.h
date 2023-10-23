@@ -14,10 +14,12 @@ extern "C" {
 
 #include <ctype.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 #define CONCAT(A, B) _CONCAT(A, B)
 #define _CONCAT(A, B) A##B
@@ -293,6 +295,16 @@ _asmtok _asm_next_tok(const char *code, oword *i)
   return tok;
 }
 
+bool _is_tok_int(const char *start, const size_t length)
+{
+  size_t i = 0;
+  while (i < length && isdigit(start[i]))
+  {
+    i++;
+  }
+  return i == length;  
+}
+
 word *asm_to_words(const char *code, oword *wlen)
 {
   if (!code || !wlen)
@@ -329,17 +341,18 @@ word *asm_to_words(const char *code, oword *wlen)
             words = realloc(words, (wordc *= 2) * sizeof(word));
           }
           _asmtok atok = _asm_next_tok(code, &a);
+          oword oval   = strtoll(atok.start, NULL, 0);
           char *endp   = NULL;
-          oword val    = strtoll(atok.start, &endp, 0);
-          if (strnchr(atok.start, '.', atok.length))
-          {
-            val = (oword) strtold(atok.start, &endp);
-          }
+          double dval  = strtold(atok.start, &endp);
           if (!isdigit(atok.start[0]) && isascii(atok.start[0]))
           {
-            val = (oword) atok.start[0];
+            oval = (oword) atok.start[0];
           }
-          _CPU_PUSH(words, *wlen, val, alen);
+          else if (!_is_tok_int(atok.start, atok.length) && endp != atok.start)
+          {
+            oval = F_TO_O(dval);
+          }
+          _CPU_PUSH(words, *wlen, oval, alen);
           *wlen += alen;
           j++;
         }
