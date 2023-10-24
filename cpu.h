@@ -68,13 +68,24 @@ extern "C" {
 
 #define X_LIST_OPS                                                             \
   X(nop) /* noop */                                                            \
-  /**/                                                                         \
+  /* memory manipulation */                                                    \
   X(set, u8, u64) /* reg[$0] = val */                                          \
   X(mov, u8, u8)  /* reg[$0] = reg[$1] */                                      \
   X(lod, u8, u64) /* reg[$0] = mem[$1] */                                      \
   X(str, u64, u8) /* mem[$0] = reg[$1] */                                      \
+  X(swp, u8, u8)  /* swap mem[$0] and reg[$1] */                               \
+  /* stack manipulation */                                                     \
+  X(psh, u8) /* push reg to stack */                                           \
+  X(pek, u8) /* peek stack to reg */                                           \
+  X(pop, u8) /* pop stack to reg */                                            \
   /**/                                                                         \
-  X(hlt) /* end the execution */
+  X(sys, u8) /* system calls */                                                \
+  X(hlt)     /* end the execution */
+
+typedef enum sys_op
+{
+  sys_print,
+} sys_op;
 
 // -----------------------------------------------------------------------------
 
@@ -160,6 +171,16 @@ typedef uint64_t u64;
 #define _FtoU(d) (*(u64 *) &(d))
 #define _UtoF(i) (*(double *) &(i))
 
+#define _u8_fmt "%u"
+#define _u16_fmt "%u"
+#define _u32_fmt "%u"
+#define _u64_fmt "%llu"
+
+#define _u8_siz 1
+#define _u16_siz 2
+#define _u32_siz 4
+#define _u64_siz 8
+
 // -----------------------------------------------------------------------------
 
 typedef enum cpu_reg
@@ -215,42 +236,31 @@ typedef enum cpu_op
     CPU_OP_COUNT
 } cpu_op;
 
-#define Z(...) CONCAT(Z_, HASARGS(__VA_ARGS__))(__VA_ARGS__)
-#define Z_0(...)
-#define Z_1(...) , __VA_ARGS__
-#define X(NAME, ...) extern void _op_##NAME(cpu c Z(__VA_ARGS__));
+#define Y(V) , V
+#define X(NAME, ...) extern void _op_##NAME(cpu c YARGS(__VA_ARGS__));
 X_LIST_OPS
-
 #undef X
-#undef Z_1
-#undef Z_0
-#undef Z
+#undef Y
 
 #define X(NAME, ...) ARGC(__VA_ARGS__),
 u8 _op_argc[] = {X_LIST_OPS};
 #undef X
 
-#define Z(...) CONCAT(Z_, HASARGS(__VA_ARGS__))(__VA_ARGS__)
-#define Z_0(...) 0
-#define Z_1(...) __VA_ARGS__
 u8 _op_lens[][4] = {
-#define u8 1
-#define u16 2
-#define u32 4
-#define u64 8
-#define X(NAME, ...) {Z(__VA_ARGS__)},
+#define Y(V) _##V##_siz,
+#define X(NAME, ...) {YARGS(__VA_ARGS__) 0},
   X_LIST_OPS
 #undef X
-
-#undef u8
-#undef u16
-#undef u32
-#undef u64
+#undef Y
 };
-#undef Z_1
-#undef Z_0
-#undef Z
 
+u8 _op_xlens[] = {
+#define Y(V) +_##V##_siz
+#define X(NAME, ...) 0 YARGS(__VA_ARGS__),
+  X_LIST_OPS
+#undef X
+#undef Y
+};
 const char *_op_toks[] = {
 #define X(NAME, ...) #NAME,
   X_LIST_OPS
@@ -273,7 +283,6 @@ const char *_op_toks[] = {
 #define _CPU_C
 
 #define _popv(CPU, TYPE) CONCAT(__popv_, TYPE)(CPU)
-#define _peekv(CPU, TYPE) CONCAT(__peekv_, TYPE)(CPU)
 
 #define __popv_8 __popv_u64
 #define __popv_u64(CPU)                                                        \
@@ -397,15 +406,31 @@ u8 *asm_compile(const char *code, u64 *out_length)
   {
     return NULL;
   }
-  u64 bytec      = 32;
-  u8 *bytes      = calloc(bytec, sizeof(u8));
+  u64 bytec = 32;
+  u8 *bytes = calloc(bytec, sizeof(u8));
+  if (bytes == NULL)
+  {
+    fprintf(stderr, "ERROR: Memory allocation failure\n");
+    exit(1);
+  }
   size_t ntokens = 0;
   char **tokens  = _asm_tokenize(code, &ntokens);
   u64 i          = 0;
   while (i < ntokens)
   {
-    u8 op              = _asm_op(tokens[i++]);
-    bytes[*out_length] = op;
+    u8 op = _asm_op(tokens[i++]);
+    printf("+ %s", _op_toks[op]);
+    if (*out_length + 1 > bytec)
+    {
+      u8 *tbytes = realloc(bytes, bytec *= 2);
+      if (tbytes == NULL)
+      {
+        fprintf(stderr, "ERROR: Memory allocation failure\n");
+        exit(1);
+      }
+      bytes = tbytes;
+    }
+    _pushv(bytes, *out_length, op, 1);
     *out_length += 1;
     for (int j = 0; j < _op_argc[op]; ++j)
     {
@@ -415,10 +440,22 @@ u8 *asm_compile(const char *code, u64 *out_length)
         exit(1);
       }
       u8 alen = _op_lens[op][j];
+      if (*out_length + alen > bytec)
+      {
+        u8 *tbytes = realloc(bytes, bytec *= 2);
+        if (tbytes == NULL)
+        {
+          fprintf(stderr, "ERROR: Memory allocation failure\n");
+          exit(1);
+        }
+        bytes = tbytes;
+      }
+      printf(" %s", tokens[i]);
       u64 arg = _asm_arg(tokens[i++]);
       _pushv(bytes, *out_length, arg, alen);
       *out_length += alen;
     }
+    printf("\n");
   }
   free(tokens);
   bytes              = realloc(bytes, (*out_length + 1) * sizeof(u8));
@@ -451,19 +488,25 @@ void cpu_run(cpu c)
   }
 }
 
+#define Y(V) " "_##V##_fmt
 #define E(N, V) CPU_GET(V, arg##N);
 #define _X_0(NAME, ...) _op_##NAME(c)
 #define _X_1(NAME, ...) _op_##NAME(c, GEN_ARGS(ARGC(__VA_ARGS__)))
+#define _PF_0(...) _op_toks[op]
+#define _PF_1(...) _op_toks[op], GEN_ARGS(ARGC(__VA_ARGS__))
 #define X(NAME, ...)                                                           \
   case op_##NAME:                                                              \
   {                                                                            \
     EARGS(__VA_ARGS__)                                                         \
+    printf("> %s" YARGS(__VA_ARGS__) " \t; ",                                  \
+           CONCAT(_PF_, HASARGS(__VA_ARGS__))(__VA_ARGS__));                   \
     CONCAT(_X_, HASARGS(__VA_ARGS__))(NAME, __VA_ARGS__);                      \
+    printf("\n");                                                              \
     break;                                                                     \
   }
 void cpu_step(cpu c)
 {
-  u8 op = _popv(c, u8);
+  CPU_GET(u8, op);
   switch (op)
   {
     X_LIST_OPS
@@ -476,15 +519,19 @@ void cpu_step(cpu c)
 #undef _X_1
 #undef Y
 
-void _op_hlt(cpu c)
-{
-  c->ip = c->memc;
-}
+//
 
 void _op_nop(cpu c)
 {
   (void) c;
 }
+
+void _op_hlt(cpu c)
+{
+  c->ip = c->memc;
+}
+
+//
 
 void _op_mov(cpu c, u8 dst, u8 src)
 {
@@ -504,6 +551,74 @@ void _op_lod(cpu c, u8 dst, u64 src)
 void _op_str(cpu c, u64 dst, u8 src)
 {
   c->mem[dst] = c->reg[src];
+}
+
+void _op_swp(cpu c, u8 r0, u8 r1)
+{
+  u64 t      = c->reg[r0];
+  c->reg[r0] = c->reg[r1];
+  c->reg[r1] = t;
+}
+
+void _op_psh(cpu c, u8 reg)
+{
+  c->stk[c->sp++] = c->reg[reg];
+}
+
+void _op_pek(cpu c, u8 reg)
+{
+  c->reg[reg] = c->stk[c->sp];
+}
+
+void _op_pop(cpu c, u8 reg)
+{
+  c->reg[reg] = c->stk[c->sp -= 1];
+}
+
+void _op_sys(cpu c, u8 reg)
+{
+  u64 sysop = c->reg[reg];
+
+  switch (sysop)
+  {
+    case sys_print:
+      u8 type  = c->i0;
+      u64 data = c->i1;
+      switch (type)
+      {
+        case 0:
+          printf("%c", (char) data);
+          break;
+        case 1:
+          printf(_u8_fmt, (u8) data);
+          break;
+        case 2:
+          printf(_u16_fmt, (u16) data);
+          break;
+        case 3:
+          printf(_u32_fmt, (u32) data);
+          break;
+        case 4:
+          printf(_u64_fmt, (u64) data);
+          break;
+        default:
+          fprintf(stderr,
+                  "ERROR: Invalid print type: '"_u8_fmt
+                  "'\n",
+                  type);
+          exit(1);
+          break;
+      }
+      break;
+
+    default:
+      fprintf(stderr,
+              "ERROR: Invalid sys op: '"_u64_fmt
+              "'\n",
+              sysop);
+      exit(1);
+      break;
+  }
 }
 
 #endif
