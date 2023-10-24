@@ -4,19 +4,24 @@
 #define MEM_SIZE 1024
 
 const char *assembly =
-  " ldv 1 0"
-  " ldv 1 1"
-  " add 0 1"
-  " sys 1"
-  " hlt";
+  "set r0 10 "
+  "mov r1 r0 "
+  "set r0 1 "
+  "hlt";
 
 int main()
 {
-  oword memc = 0;
-  word *mem  = asm_to_words(assembly, &memc);
+  u64 memc = 0;
+  u8 *mem  = asm_compile(assembly, &memc);
+  printf("%llu: ", memc);
+  for (int i = 0; i < memc; ++i)
+  {
+    printf("%x ", mem[i]);
+  }
 
   cpu c = cpu_new(memc, mem);
   cpu_run(c);
   free(c);
+  free(mem);
   return 0;
 }

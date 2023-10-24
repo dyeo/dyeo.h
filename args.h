@@ -158,25 +158,26 @@ typedef struct args_t
 
 #define args_new() _args_new_impl()
 
-#define args_default(args_t)                                                     \
+#define args_default(args_t)                                                   \
   do                                                                           \
   {                                                                            \
-    args_flag(args_t, help, "Display this help message and exit");               \
+    args_flag(args_t, help, "Display this help message and exit");             \
   } while (0)
 
-#define _args_common(args_t, NAME, TYPE, ISFLAG, ISPOPPED, ...)                  \
-  _args_arg_impl(args_t, NAME, TYPE, ISFLAG, ISPOPPED, 0, ""__VA_ARGS__, 0, 0,   \
+#define _args_common(args_t, NAME, TYPE, ISFLAG, ISPOPPED, ...)                \
+  _args_arg_impl(args_t, NAME, TYPE, ISFLAG, ISPOPPED, 0, ""__VA_ARGS__, 0, 0, \
                  0, 0)
 
-#define args_arg(args_t, NAME, TYPE, ...)                                        \
-  ((TYPE *) _args_common(args_t, #NAME, _ARGTYPE(TYPE), false, false,            \
+#define args_arg(args_t, NAME, TYPE, ...)                                      \
+  ((TYPE *) _args_common(args_t, #NAME, _ARGTYPE(TYPE), false, false,          \
                          __VA_ARGS__))
 
-#define args_flag(args_t, NAME, ...)                                             \
+#define args_flag(args_t, NAME, ...)                                           \
   ((bool *) _args_common(args_t, #NAME, _bool_type, true, false, __VA_ARGS__))
 
-#define args_pop(args_t, NAME, TYPE, ...)                                        \
-  ((TYPE *) _args_common(args_t, #NAME, _ARGTYPE(TYPE), false, true, __VA_ARGS__))
+#define args_pop(args_t, NAME, TYPE, ...)                                      \
+  ((TYPE *) _args_common(args_t, #NAME, _ARGTYPE(TYPE), false, true,           \
+                         __VA_ARGS__))
 
 extern args_t _args_new_impl();
 
@@ -210,8 +211,8 @@ extern void _args_parse(args_t args, int argc, char **argv);
 
 args_t _args_new_impl()
 {
-  args_t args  = (args_t) malloc(sizeof(struct args_t));
-  args->argc = 0;
+  args_t args = (args_t) malloc(sizeof(struct args_t));
+  args->argc  = 0;
   memset(args->args, 0, sizeof(arg_t) * ARGS_MAX_ARGC); // initialize to zero
   return args;
 }
@@ -233,7 +234,7 @@ void *_args_arg_impl(args_t args, const char *name, argtype_t type, bool isFlag,
   int tlen = _argtype_sizes[type];
   args->args[args->argc] =
     (arg_t){name,  type,   message,    malloc(tlen),      (void *) defaultValue,
-          false, isFlag, isRequired, strlen(name) == 1, isPopped};
+            false, isFlag, isRequired, strlen(name) == 1, isPopped};
   *((void **) args->args[args->argc].value) = (void *) defaultValue;
   args->argc += 1;
   return args->args[args->argc - 1].value;
@@ -448,12 +449,12 @@ void args_help(FILE *const s, args_t args)
   }
 }
 
-#define args_parse(args_t, ARGC, ARGV)                                           \
+#define args_parse(args_t, ARGC, ARGV)                                         \
   do                                                                           \
   {                                                                            \
-    _args_parse(args_t, ARGC, ARGV);                                             \
-    (ARGC) -= (args_t)->argr;                                                    \
-    (ARGV) += (args_t)->argr - 1;                                                \
+    _args_parse(args_t, ARGC, ARGV);                                           \
+    (ARGC) -= (args_t)->argr;                                                  \
+    (ARGV) += (args_t)->argr - 1;                                              \
   } while (0)
 
 void _args_parse(args_t args, int argc, char **argv)
@@ -600,8 +601,8 @@ void _args_parse(args_t args, int argc, char **argv)
 #endif
 
 /*
---------------------------------------------------------------------------------
 This software is served under two licenses - pick which you prefer.
+--------------------------------------------------------------------------------
 MIT License
 Copyright 2023 Dani Yeomans
 
@@ -627,16 +628,16 @@ Public Domain
 Dedicated 2023 Dani Yeomans
 
 The author of this software and associated documentation files (the "Software")
-also dedicates any and all copyright interest in the Software to the public
-domain. The author makes this dedication for the benefit of the public at large
-and to the detriment of the author's heirs and successors. The author intends
-this dedication to be an overt act of relinquishment in perpetuity of all
-present and future rights to the Software under copyright law.
+dedicates any and all copyright interest in the Software to the public domain.
+The author makes this dedication for the benefit of the public at large and to
+the detriment of the author's heirs and successors. The author intends this
+dedication to be an overt act of relinquishment in perpetuity of all present and
+future rights to the Software under copyright law.
 
 Any person obtaining a copy of the Software and associated documentation files
-(the "Software") is free to to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to no conditions.
+is free to to deal in the Software without restriction, including without
+limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom
+the Software is furnished to do so, subject to no conditions.
 --------------------------------------------------------------------------------
 */

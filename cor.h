@@ -317,16 +317,16 @@ Public Domain
 Dedicated 2023 Dani Yeomans
 
 The author of this software and associated documentation files (the "Software")
-also dedicates any and all copyright interest in the Software to the public
-domain. The author makes this dedication for the benefit of the public at large
-and to the detriment of the author's heirs and successors. The author intends
-this dedication to be an overt act of relinquishment in perpetuity of all
-present and future rights to the Software under copyright law.
+dedicates any and all copyright interest in the Software to the public domain.
+The author makes this dedication for the benefit of the public at large and to
+the detriment of the author's heirs and successors. The author intends this
+dedication to be an overt act of relinquishment in perpetuity of all present and
+future rights to the Software under copyright law.
 
 Any person obtaining a copy of the Software and associated documentation files
-(the "Software") is free to to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to no conditions.
+is free to to deal in the Software without restriction, including without
+limitation the rights to use, copy, modify, merge, publish, distribute,
+sublicense, and/or sell copies of the Software, and to permit persons to whom
+the Software is furnished to do so, subject to no conditions.
 --------------------------------------------------------------------------------
 */

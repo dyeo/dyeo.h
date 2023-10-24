@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 
-set -xe
+set -e
 
 if [[ $OSTYPE == msys* || $OSTYPE == mingw* || $OSTYPE == cygwin* ]]; then
     EXT=".exe"
@@ -17,9 +17,8 @@ cd out
 cp -r ../res res/
 
 declare -A TEST_ARGS
-TEST_ARGS["args"]="-something2=1 -a -c sine.wav"
+TEST_ARGS["args"]="-something2=1 -a -c args.exe"
 
-set +xe
 if [[ "$1" == "ALL" ]]; then
     APPS=()
     for file in ../*.h; do
@@ -29,19 +28,18 @@ else
     APPS=("$@")
 fi
 
-set +x
 for APP in "${APPS[@]}"; do
     cc="clang "../tests/$APP.c" \
         -Werror \
         -o "./$APP$EXT" \
         $LIBRARIES"
-    echo + $cc
+    echo $cc
     eval $cc
     if [[ -n "${TEST_ARGS[$APP]}" ]]; then
         exe="./"$APP$EXT" ${TEST_ARGS[$APP]}"
     else
         exe="./"$APP$EXT""
     fi
-    echo + $exe
+    echo $exe
     eval $exe
 done
