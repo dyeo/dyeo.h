@@ -54,13 +54,27 @@ extern "C" {
   X(o0)                                                                        \
   X(o1)
 
+#define X_LIST_GREGISTERS                                                      \
+  X(r0)                                                                        \
+  X(r1)                                                                        \
+  X(r2)                                                                        \
+  X(r3)                                                                        \
+  X(r4)                                                                        \
+  X(r5)                                                                        \
+  X(r6)                                                                        \
+  X(r7)                                                                        \
+  X(r8)                                                                        \
+  X(r9)
+
 #define X_LIST_OPS                                                             \
-  X(nop)          /* noop */                                                   \
+  X(nop) /* noop */                                                            \
+  /**/                                                                         \
   X(set, u8, u64) /* reg[$0] = val */                                          \
   X(mov, u8, u8)  /* reg[$0] = reg[$1] */                                      \
   X(lod, u8, u64) /* reg[$0] = mem[$1] */                                      \
   X(str, u64, u8) /* mem[$0] = reg[$1] */                                      \
-  X(hlt)          /* end the execution */
+  /**/                                                                         \
+  X(hlt) /* end the execution */
 
 // -----------------------------------------------------------------------------
 
@@ -99,27 +113,42 @@ extern "C" {
 
 #define _EARGS_0(...)
 #define _EARGS_1(_1, ...) E(0, _1)
-#define _EARGS_2(_1, _2, ...) E(1, _1) E(2, _2)
-#define _EARGS_3(_1, _2, _3, ...) E(1, _1) E(2, _2) E(3, _3)
-#define _EARGS_4(_1, _2, _3, _4, ...) E(1, _1) E(2, _2) E(3, _3) E(4, _4)
+#define _EARGS_2(_1, _2, ...) E(0, _1) E(1, _2)
+#define _EARGS_3(_1, _2, _3, ...) E(0, _1) E(1, _2) E(2, _3)
+#define _EARGS_4(_1, _2, _3, _4, ...) E(0, _1) E(1, _2) E(2, _3) E(3, _4)
 #define _EARGS_5(_1, _2, _3, _4, _5, ...)                                      \
-  E(1, _1) E(2, _2) E(3, _3) E(4, _4) E(5, _5)
+  E(0, _1) E(1, _2) E(2, _3) E(3, _4) E(4, _5)
 #define _EARGS_6(_1, _2, _3, _4, _5, _6, ...)                                  \
-  E(1, _1) E(2, _2) E(3, _3) E(4, _4) E(5, _5) E(6, _6)
+  E(0, _1) E(1, _2) E(2, _3) E(3, _4) E(4, _5) E(5, _6)
 #define _EARGS_7(_1, _2, _3, _4, _5, _6, _7, ...)                              \
-  E(1, _1) E(2, _2) E(3, _3) E(4, _4) E(5, _5) E(6, _6) E(7, _7)
+  E(0, _1) E(1, _2) E(2, _3) E(3, _4) E(4, _5) E(5, _6) E(6, _7)
 #define _EARGS_8(_1, _2, _3, _4, _5, _6, _7, _8, ...)                          \
-  E(1, _1) E(2, _2) E(3, _3) E(4, _4) E(5, _5) E(6, _6) E(7, _7) E(8, _8)
+  E(0, _1) E(1, _2) E(2, _3) E(3, _4) E(4, _5) E(5, _6) E(6, _7) E(7, _8)
 #define _EARGS_9(_1, _2, _3, _4, _5, _6, _7, _8, _9, ...)                      \
-  E(1, _1)                                                                     \
-  E(2, _2) E(3, _3) E(4, _4) E(5, _5) E(6, _6) E(7, _7) E(8, _8) E(9, _9)
+  E(0, _1)                                                                     \
+  E(1, _2) E(2, _3) E(3, _4) E(4, _5) E(5, _6) E(6, _7) E(7, _8) E(8, _9)
 #define _EARGS_10(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, ...)                \
-  E(1, _1)                                                                     \
-  E(2, _2)                                                                     \
-  E(3, _3) E(4, _4) E(5, _5) E(6, _6) E(7, _7) E(8, _8) E(9, _9) E(10, _10)
+  E(0, _1)                                                                     \
+  E(1, _2)                                                                     \
+  E(2, _3) E(3, _4) E(4, _5) E(5, _6) E(6, _7) E(7, _8) E(8, _9) E(9, _10)
 
 #define EARGS_N(N, ...) CONCAT(_EARGS_, N)(__VA_ARGS__)
 #define EARGS(...) EARGS_N(ARGC(__VA_ARGS__), __VA_ARGS__)
+
+#define _GEN_ARGS_0()
+#define _GEN_ARGS_1() arg0
+#define _GEN_ARGS_2() arg0, arg1
+#define _GEN_ARGS_3() arg0, arg1, arg2
+#define _GEN_ARGS_4() arg0, arg1, arg2, arg3
+#define _GEN_ARGS_5() arg0, arg1, arg2, arg3, arg4
+#define _GEN_ARGS_6() arg0, arg1, arg2, arg3, arg4, arg5
+#define _GEN_ARGS_7() arg0, arg1, arg2, arg3, arg4, arg5, arg6
+#define _GEN_ARGS_8() arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7
+#define _GEN_ARGS_9() arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8
+#define _GEN_ARGS_10()                                                         \
+  arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9
+
+#define GEN_ARGS(N) CONCAT(_GEN_ARGS_, N)()
 
 // -----------------------------------------------------------------------------
 
@@ -422,13 +451,16 @@ void cpu_run(cpu c)
   }
 }
 
-#define Y(V) , _popv(c, V)
+#define E(N, V) CPU_GET(V, arg##N);
 #define _X_0(NAME, ...) _op_##NAME(c)
-#define _X_1(NAME, ...) _op_##NAME(c YARGS(__VA_ARGS__))
+#define _X_1(NAME, ...) _op_##NAME(c, GEN_ARGS(ARGC(__VA_ARGS__)))
 #define X(NAME, ...)                                                           \
   case op_##NAME:                                                              \
+  {                                                                            \
+    EARGS(__VA_ARGS__)                                                         \
     CONCAT(_X_, HASARGS(__VA_ARGS__))(NAME, __VA_ARGS__);                      \
-    break;
+    break;                                                                     \
+  }
 void cpu_step(cpu c)
 {
   u8 op = _popv(c, u8);

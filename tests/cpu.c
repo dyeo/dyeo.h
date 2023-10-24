@@ -4,10 +4,8 @@
 #define MEM_SIZE 1024
 
 const char *assembly =
-  "set r0 10 "
-  "mov r1 r0 "
-  "set r0 1 "
-  "hlt";
+  "set r0 1000 "
+  "set r1 1000 ";
 
 int main()
 {
@@ -18,9 +16,12 @@ int main()
   {
     printf("%x ", mem[i]);
   }
+  printf("\n");
 
   cpu c = cpu_new(memc, mem);
   cpu_run(c);
+  printf("%llu\n", c->r[0]);
+  printf("%llu\n", c->r[1]);
   free(c);
   free(mem);
   return 0;
