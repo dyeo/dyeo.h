@@ -19,7 +19,6 @@ extern "C" {
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -101,6 +100,10 @@ typedef enum sys_op
 #define ARGC(...) _ARGC(_, __VA_ARGS__, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
 #define HASARGS(...) _ARGC(_, __VA_ARGS__, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0)
 #endif
+
+#define _OPTARGS_0(...)
+#define _OPTARGS_1(...) , __VA_ARGS__
+#define OPTARGS(...) CONCAT(_OPTARGS_, HASARGS(__VA_ARGS__))(__VA_ARGS__)
 
 #define _YARGS_0(...)
 #define _YARGS_1(_1, ...) Y(_1)
@@ -282,6 +285,17 @@ const char *_op_toks[] = {
 #ifndef _CPU_C
 #define _CPU_C
 
+#ifdef CPU_DEBUG
+#include <stdio.h>
+#define _log(FMT, ...) printf(FMT OPTARGS(__VA_ARGS__))
+#define _logl(FMT, ...) printf(FMT "\n" OPTARGS(__VA_ARGS__))
+#define _error(FMT, ...)                                                       \
+  fprintf(stderr, "ERROR: " FMT "\n" OPTARGS(__VA_ARGS__))
+#else
+#define _log(FMT, ...)
+#define _error(FMT, ...)
+#endif
+
 #define _popv(CPU, TYPE) CONCAT(__popv_, TYPE)(CPU)
 
 #define __popv_8 __popv_u64
@@ -383,7 +397,7 @@ u8 _asm_op(const char *token)
       return i;
     }
   }
-  fprintf(stderr, "ERROR: Expected opcode, got '%s\n", token);
+  _error("Expected opcode, got '%s", token);
   exit(1);
   return 0;
 }
@@ -410,22 +424,23 @@ u8 *asm_compile(const char *code, u64 *out_length)
   u8 *bytes = calloc(bytec, sizeof(u8));
   if (bytes == NULL)
   {
-    fprintf(stderr, "ERROR: Memory allocation failure\n");
+    _error("Memory allocation failure");
     exit(1);
   }
   size_t ntokens = 0;
-  char **tokens  = _asm_tokenize(code, &ntokens);
-  u64 i          = 0;
+  _logl("Compiling...");
+  char **tokens = _asm_tokenize(code, &ntokens);
+  u64 i         = 0;
   while (i < ntokens)
   {
     u8 op = _asm_op(tokens[i++]);
-    printf("+ %s", _op_toks[op]);
+    _log("+ %s", _op_toks[op]);
     if (*out_length + 1 > bytec)
     {
       u8 *tbytes = realloc(bytes, bytec *= 2);
       if (tbytes == NULL)
       {
-        fprintf(stderr, "ERROR: Memory allocation failure\n");
+        _error("Memory allocation failure");
         exit(1);
       }
       bytes = tbytes;
@@ -436,7 +451,7 @@ u8 *asm_compile(const char *code, u64 *out_length)
     {
       if (i >= ntokens)
       {
-        fprintf(stderr, "ERROR: Expected argument, got EOF\n");
+        _error("Expected argument, got EOF");
         exit(1);
       }
       u8 alen = _op_lens[op][j];
@@ -445,21 +460,22 @@ u8 *asm_compile(const char *code, u64 *out_length)
         u8 *tbytes = realloc(bytes, bytec *= 2);
         if (tbytes == NULL)
         {
-          fprintf(stderr, "ERROR: Memory allocation failure\n");
+          _error("Memory allocation failure");
           exit(1);
         }
         bytes = tbytes;
       }
-      printf(" %s", tokens[i]);
+      _log(" %s", tokens[i]);
       u64 arg = _asm_arg(tokens[i++]);
       _pushv(bytes, *out_length, arg, alen);
       *out_length += alen;
     }
-    printf("\n");
+    _log("\n");
   }
   free(tokens);
   bytes              = realloc(bytes, (*out_length + 1) * sizeof(u8));
   bytes[*out_length] = 0;
+  _log("\n");
   return bytes;
 }
 
@@ -467,7 +483,7 @@ cpu cpu_new(u64 memc, u8 *mem)
 {
   if (memc == 0 || !mem)
   {
-    fprintf(stderr, "ERROR: CPU requires memory to function\n");
+    _error("CPU requires memory to function");
     exit(1);
   }
   cpu c = malloc(sizeof(struct cpu));
@@ -482,10 +498,12 @@ cpu cpu_new(u64 memc, u8 *mem)
 
 void cpu_run(cpu c)
 {
+  _logl("Running...");
   while (c->ip < c->memc)
   {
     cpu_step(c);
   }
+  _log("\n");
 }
 
 #define Y(V) " "_##V##_fmt
@@ -498,10 +516,10 @@ void cpu_run(cpu c)
   case op_##NAME:                                                              \
   {                                                                            \
     EARGS(__VA_ARGS__)                                                         \
-    printf("> %s" YARGS(__VA_ARGS__) " \t; ",                                  \
-           CONCAT(_PF_, HASARGS(__VA_ARGS__))(__VA_ARGS__));                   \
+    _log("> %s" YARGS(__VA_ARGS__) " \t; ",                                    \
+         CONCAT(_PF_, HASARGS(__VA_ARGS__))(__VA_ARGS__));                     \
     CONCAT(_X_, HASARGS(__VA_ARGS__))(NAME, __VA_ARGS__);                      \
-    printf("\n");                                                              \
+    _log("\n");                                                                \
     break;                                                                     \
   }
 void cpu_step(cpu c)
@@ -587,35 +605,35 @@ void _op_sys(cpu c, u8 reg)
       switch (type)
       {
         case 0:
-          printf("%c", (char) data);
+          _log("%c", (char) data);
           break;
         case 1:
-          printf(_u8_fmt, (u8) data);
+          _log(_u8_fmt, (u8) data);
           break;
         case 2:
-          printf(_u16_fmt, (u16) data);
+          _log(_u16_fmt, (u16) data);
           break;
         case 3:
-          printf(_u32_fmt, (u32) data);
+          _log(_u32_fmt, (u32) data);
           break;
         case 4:
-          printf(_u64_fmt, (u64) data);
+          _log(_u64_fmt, (u64) data);
           break;
         default:
-          fprintf(stderr,
-                  "ERROR: Invalid print type: '"_u8_fmt
-                  "'\n",
-                  type);
+          _error(
+            "Invalid print type: '"_u8_fmt
+            "'",
+            type);
           exit(1);
           break;
       }
       break;
 
     default:
-      fprintf(stderr,
-              "ERROR: Invalid sys op: '"_u64_fmt
-              "'\n",
-              sysop);
+      _error(
+        "Invalid sys op: '"_u64_fmt
+        "'",
+        sysop);
       exit(1);
       break;
   }
