@@ -49,8 +49,7 @@ int main()
 
     // Floating point
     test_expr(mathe("1.5 + 2.5"), double, 4.0);
-    test_expr(mathe("10.0 / 3.0"), double,
-              3.3333333333333335); // Precision might be tricky!
+    test_expr(mathe("10.0 / 3.0"), double, 3.333333333333333333333333);
     test_expr(mathe("5.5 * 2"), double, 11.0);
 
     // Powers
