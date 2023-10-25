@@ -46,6 +46,6 @@ int main()
     // Powers
     test_expr(mathe("2 ^ 3"), double, 8.0);
     test_expr(mathe("9 ^ 0.5"), double, 3.0);
-    test_expr(isnan(mathe("(-1) ^ 2")), bool, true);
+    test_expr(mathe("(-1) ^ 2"), double, 1.0);
   });
 }

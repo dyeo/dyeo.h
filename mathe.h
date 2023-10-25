@@ -128,6 +128,10 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen)
         {
           tok = (_me_tok){true, me_sub};
         }
+        else
+        {
+          tok = (_me_tok){false, (double) strtold(expr + i, NULL)};
+        }
         break;
     }
     if (!tok.isop)
