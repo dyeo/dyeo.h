@@ -57,6 +57,7 @@ extern REAL mathe(const char *expression);
   X(lpr)                                                                       \
   X(rpr)                                                                       \
   X(min)                                                                       \
+  X(fun)                                                                       \
   X(exp)                                                                       \
   X(mlt)                                                                       \
   X(div)                                                                       \
@@ -80,7 +81,11 @@ typedef struct _me_tok
   bool isop;
   union
   {
-    _me_op op;
+    struct
+    {
+      _me_op op;
+      REAL (*fun)(REAL);
+    };
     REAL val;
   };
 } _me_tok;
@@ -120,6 +125,21 @@ typedef struct _me_tok
     i += 1;                                                                    \
   } while (0)
 
+#define PUSH_FUN(FPTR, LEN)                                                    \
+  do                                                                           \
+  {                                                                            \
+    RESIZE(tokens, *toklen, tokcap, 1);                                        \
+    if (!tokens)                                                               \
+    {                                                                          \
+      return NULL;                                                             \
+    }                                                                          \
+    tokens[*toklen].isop = true;                                               \
+    tokens[*toklen].op   = me_fun;                                             \
+    tokens[*toklen].fun  = FPTR;                                               \
+    *toklen += 1;                                                              \
+    i += LEN;                                                                  \
+  } while (0)
+
 #define _strncmp(StrA, StrB, StrN)                                             \
   (StrN == strlen(StrB) && !memcmp(StrA, StrB, StrN))
 
@@ -149,6 +169,26 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen)
       if (_strncmp(token, "pi", tlen))
       {
         PUSH_VAL(3.141592653589793, tlen);
+        continue;
+      }
+      if (_strncmp(token, "sin", tlen))
+      {
+        PUSH_FUN(sin, tlen);
+        continue;
+      }
+      if (_strncmp(token, "cos", tlen))
+      {
+        PUSH_FUN(sin, tlen);
+        continue;
+      }
+      if (_strncmp(token, "tan", tlen))
+      {
+        PUSH_FUN(sin, tlen);
+        continue;
+      }
+      if (_strncmp(token, "sqrt", tlen))
+      {
+        PUSH_FUN(sqrt, tlen);
         continue;
       }
     }
@@ -215,11 +255,8 @@ _me_tok *_me_shuntingyard(_me_tok *tokens, const size_t toklen, size_t *outlen)
     {
       output[olen++] = tokens[i++];
     }
-    else if (tokens[i].op == me_min)
-    {
-      stack[slen++] = tokens[i++];
-    }
-    else if (tokens[i].op == me_lpr)
+    else if (tokens[i].op == me_min || tokens[i].op == me_lpr ||
+             tokens[i].op == me_fun)
     {
       stack[slen++] = tokens[i++];
     }
@@ -231,6 +268,10 @@ _me_tok *_me_shuntingyard(_me_tok *tokens, const size_t toklen, size_t *outlen)
       }
       slen--;
       i++;
+      if (slen && stack[slen - 1].op == me_fun)
+      {
+        output[olen++] = stack[--slen];
+      }
     }
     else
     {
@@ -276,16 +317,28 @@ REAL mathe(const char *expr)
     }
     else
     {
-      if (tokens[i].op == me_min)
+      switch (tokens[i].op)
       {
-        if (slen < 1)
-        {
-          free(stack);
-          free(tokens);
-          return NAN;
-        }
-        stack[slen - 1] = -stack[slen - 1];
-        continue;
+        default:
+          break;
+        case me_fun:
+          if (slen < 1)
+          {
+            free(stack);
+            free(tokens);
+            return NAN;
+          }
+          stack[slen - 1] = tokens[i].fun(stack[slen - 1]);
+          continue;
+        case me_min:
+          if (slen < 1)
+          {
+            free(stack);
+            free(tokens);
+            return NAN;
+          }
+          stack[slen - 1] = -stack[slen - 1];
+          continue;
       }
 
       if (slen < 2)

@@ -8,6 +8,7 @@ int main()
   test_group(mathe, {
     // Basic operations
     test_expr(mathe("pi"), double, 3.141592653589793);
+    test_expr(mathe("sin(1)"), double, 0.84147098480789650665);
     // Basic operations
     test_expr(mathe("1 + 1"), double, 2.0);
     test_expr(mathe("1 + 1 * 2"), double, 3.0);
