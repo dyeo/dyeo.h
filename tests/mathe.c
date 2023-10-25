@@ -7,6 +7,8 @@ int main()
 {
   test_group(mathe, {
     // Basic operations
+    test_expr(mathe("pi"), double, 3.141592653589793);
+    // Basic operations
     test_expr(mathe("1 + 1"), double, 2.0);
     test_expr(mathe("1 + 1 * 2"), double, 3.0);
     test_expr(mathe("(2*5)+4"), double, 14.0);

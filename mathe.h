@@ -85,6 +85,45 @@ typedef struct _me_tok
   };
 } _me_tok;
 
+#define PUSH_VAL(VAL, LEN)                                                     \
+  do                                                                           \
+  {                                                                            \
+    if (*toklen + 1 > tokcap)                                                  \
+    {                                                                          \
+      tokcap *= 2;                                                             \
+      tokens = realloc(tokens, tokcap * sizeof(_me_tok));                      \
+      if (!tokens)                                                             \
+      {                                                                        \
+        return NULL;                                                           \
+      }                                                                        \
+    }                                                                          \
+    tokens[*toklen].isop = false;                                              \
+    tokens[*toklen].val  = VAL;                                                \
+    *toklen += 1;                                                              \
+    i += LEN;                                                                  \
+  } while (0)
+
+#define PUSH_OP(OP)                                                            \
+  do                                                                           \
+  {                                                                            \
+    if (*toklen + 1 > tokcap)                                                  \
+    {                                                                          \
+      tokcap *= 2;                                                             \
+      tokens = realloc(tokens, tokcap * sizeof(_me_tok));                      \
+      if (!tokens)                                                             \
+      {                                                                        \
+        return NULL;                                                           \
+      }                                                                        \
+    }                                                                          \
+    tokens[*toklen].isop = true;                                               \
+    tokens[*toklen].op   = OP;                                                 \
+    *toklen += 1;                                                              \
+    i += 1;                                                                    \
+  } while (0)
+
+#define _strncmp(StrA, StrB, StrN)                                             \
+  (StrN == strlen(StrB) && !memcmp(StrA, StrB, StrN))
+
 _me_tok *_me_tokenize(const char *expr, size_t *toklen)
 {
   size_t tokcap   = 32;
@@ -100,61 +139,66 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen)
     if (expr[i] == '\0')
       break;
     _me_tok tok = {false, {.val = 0.0}};
-    switch (expr[i])
+    if (isalpha(expr[i]))
     {
-      case '(':
-        tok = (_me_tok){true, me_lpr};
-        break;
-      case ')':
-        tok = (_me_tok){true, me_rpr};
-        break;
-      case '^':
-        tok = (_me_tok){true, me_exp};
-        break;
-      case '*':
-        tok = (_me_tok){true, me_mlt};
-        break;
-      case '/':
-        tok = (_me_tok){true, me_div};
-        break;
-      case '%':
-        tok = (_me_tok){true, me_mod};
-        break;
-      case '+':
-        tok = (_me_tok){true, me_add};
-        break;
-      case '-':
-        if (i == 0 || (i != 0 && (tokens[*toklen - 1].isop &&
-                                  tokens[*toklen - 1].op != me_rpr)))
-        {
-          tok = (_me_tok){true, me_min};
-        }
-        else
-        {
-          tok = (_me_tok){true, me_sub};
-        }
-        break;
+      const char *token = expr + i;
+      size_t tlen       = 0;
+      while (token[tlen] && isalpha(token[tlen]))
+      {
+        tlen += 1;
+      }
+      if (_strncmp(token, "pi", tlen))
+      {
+        PUSH_VAL(3.141592653589793, tlen);
+        continue;
+      }
     }
     if (!tok.isop)
     {
-      char *end = NULL;
-      tok.val   = strtod(expr + i, &end);
-      i         = end - expr;
-    }
-    else
-    {
-      i++;
-    }
-    if (*toklen + 1 > tokcap)
-    {
-      tokcap *= 2;
-      tokens = realloc(tokens, tokcap * sizeof(_me_tok));
-      if (!tokens)
+      switch (expr[i])
       {
-        return NULL;
+        case '(':
+          PUSH_OP(me_lpr);
+          continue;
+        case ')':
+          PUSH_OP(me_rpr);
+          continue;
+        case '^':
+          PUSH_OP(me_exp);
+          continue;
+        case '*':
+          PUSH_OP(me_mlt);
+          continue;
+        case '/':
+          PUSH_OP(me_div);
+          continue;
+        case '%':
+          PUSH_OP(me_mod);
+          continue;
+        case '+':
+          PUSH_OP(me_add);
+          continue;
+        case '-':
+          if (i == 0 || (i != 0 && (tokens[*toklen - 1].isop &&
+                                    tokens[*toklen - 1].op != me_rpr)))
+          {
+            PUSH_OP(me_min);
+          }
+          else
+          {
+            PUSH_OP(me_sub);
+          }
+          continue;
       }
     }
-    tokens[(*toklen)++] = tok;
+    if (!tok.isop)
+    {
+      char *end  = NULL;
+      double val = strtod(expr + i, &end);
+      PUSH_VAL(val, end - (expr + i));
+      continue;
+    }
+    i++;
   }
   tokens = realloc(tokens, *toklen * sizeof(_me_tok));
   return tokens;
@@ -241,8 +285,7 @@ REAL mathe(const char *expr)
           free(tokens);
           return NAN;
         }
-        REAL r        = stack[--slen];
-        stack[slen++] = -r;
+        stack[slen - 1] = -stack[slen - 1];
         continue;
       }
 
