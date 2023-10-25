@@ -159,7 +159,7 @@
 #define _test_h_indent(S)                                                      \
   do                                                                           \
   {                                                                            \
-    for (int i = 0; i < _test_h_level * 2; ++i)                                \
+    for (size_t i = 0; i < _test_h_level * 2; ++i)                             \
     {                                                                          \
       fputc(' ', S);                                                           \
     }                                                                          \
