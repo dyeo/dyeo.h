@@ -1,4 +1,4 @@
-#define CPU_DEBUG
+//#define CPU_DEBUG
 #define CPU_IMPLEMENTATION
 #include "../cpu.h"
 
@@ -9,7 +9,7 @@
 int main()
 {
   u64 memc = 0;
-  u8 *mem  = asm_compf("../res/test.asm", &memc);
+  u8 *mem  = asm_compf("../res/test2.asm", &memc);
 
   cpu c = cpu_new(memc, mem);
   cpu_run(c);

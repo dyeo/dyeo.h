@@ -97,6 +97,8 @@ extern "C" {
   X(ne, u8, u8) /* reg[$0] = reg[$0] != reg[$1] */                             \
   X(ge, u8, u8) /* reg[$0] = reg[$0] >= reg[$1] */                             \
   X(gt, u8, u8) /* reg[$0] = reg[$0] > reg[$1] */                              \
+  X(ls, u8, u8) /* reg[$0] = reg[$0] << reg[$1] */                             \
+  X(rs, u8, u8) /* reg[$0] = reg[$0] >> reg[$1] */                             \
   /*                                                        logic operators */ \
   X(and, u8, u8) /* reg[$0] &= reg[$1] */                                      \
   X(or, u8, u8)  /* reg[$0] |= reg[$1] */                                      \
@@ -104,7 +106,7 @@ extern "C" {
   X(not, u8)     /* reg[$0] = ~reg[$0] */                                      \
   /*                                                          miscellaneous */ \
   X(nop)     /* noop */                                                        \
-  X(sys, u8) /* system calls */                                                \
+  X(sys, u8) /* system calls (like print) */                                   \
   X(hlt)     /* end the execution */
 
 typedef enum sys_op
@@ -272,10 +274,10 @@ X_LIST_OPS
 #undef Y
 
 #define X(NAME, ...) ARGC(__VA_ARGS__),
-u8 _op_argc[] = {X_LIST_OPS};
+size_t _op_argc[] = {X_LIST_OPS};
 #undef X
 
-u8 _op_lens[][4] = {
+size_t _op_lens[][4] = {
 #define Y(V) _##V##_siz,
 #define X(NAME, ...) {YARGS(__VA_ARGS__) 0},
   X_LIST_OPS
@@ -283,7 +285,7 @@ u8 _op_lens[][4] = {
 #undef Y
 };
 
-u8 _op_xlens[] = {
+size_t _op_xlens[] = {
 #define Y(V) +_##V##_siz
 #define X(NAME, ...) 0 YARGS(__VA_ARGS__),
   X_LIST_OPS
@@ -364,6 +366,12 @@ const char *_op_toks[] = {
 #define int_1_t u8
 
 #define CPU_GET(TYPE, NAME) TYPE NAME = _popv(c, TYPE)
+
+typedef struct _label
+{
+  const char *token;
+  u64 addr;
+} _label;
 
 bool _isdigit(const char *start, const size_t length)
 {
@@ -465,16 +473,101 @@ u8 _asm_opcode(const char *token)
   return -1;
 }
 
-u64 _asm_arg(const char *token)
+bool _asm_char(const char *s, char *result)
 {
+  if (!s || strlen(s) < 3)
+  {
+    return false;
+  }
+  if (s[0] != '\'' || s[strlen(s) - 1] != '\'')
+  {
+    return false;
+  }
+  if (strlen(s) == 3 && s[1] != '\\')
+  {
+    *result = s[1];
+    return true;
+  }
+  if (strlen(s) == 4 && s[1] == '\\')
+  {
+    switch (s[2])
+    {
+      case 'n':
+        *result = '\n';
+        return true;
+      case 't':
+        *result = '\t';
+        return true;
+      case 'r':
+        *result = '\r';
+        return true;
+      case 's':
+        *result = ' ';
+        return true;
+      case '0':
+        *result = '\0';
+        return true;
+      case '\\':
+        *result = '\\';
+        return true;
+      case '\'':
+        *result = '\'';
+        return true;
+      default:
+        return false;
+    }
+  }
+  return false;
+}
+
+size_t _asm_arglen(u64 n)
+{
+  int highest = 0;
+  for (int i = 0; i < sizeof(int) * 8; i++)
+  {
+    if (n & (1 << i))
+    {
+      highest = i;
+    }
+  }
+  return (highest / 8) + 1;
+}
+
+u64 _asm_arg(const char *token, size_t *arglen, _label *labels)
+{
+  char chararg = '\0';
+  if (_asm_char(token, &chararg))
+  {
+    *arglen = _u8_siz;
+    return (u64) chararg;
+  }
+  if (token[0] == '@')
+  {
+    size_t toklen = strlen(token);
+    size_t i      = 0;
+    while (labels[i].token != NULL)
+    {
+      size_t lablen = strlen(labels[i].token);
+      if (toklen == lablen && strncmp(token + 1, labels[i].token, lablen) == 0)
+      {
+        *arglen = _u64_siz;
+        return labels[i].addr;
+      }
+      i++;
+    }
+    _error("No label '%s' exists", token + 1);
+  }
   for (u8 i = 0; i < CPU_REGISTER_COUNT; ++i)
   {
     if (strcmp(_reg_toks[i], token) == 0)
     {
+      *arglen = _u8_siz;
       return i;
     }
   }
-  return strtoull(token, NULL, 0);
+  u64 val = strtoull(token, NULL, 0);
+  *arglen = _asm_arglen(val);
+  return val;
 }
 
 u8 *asm_comps(const char *code, u64 *out_length)
@@ -493,9 +586,29 @@ u8 *asm_comps(const char *code, u64 *out_length)
   _logl("Compiling...");
   size_t ntokens = 0;
   char **tokens  = _asm_tokenize(code, &ntokens);
-  u64 i          = 0;
+  size_t labeln = 0, labelc = 16;
+  _label *labels   = malloc(sizeof(_label) * labelc);
+  labels[labeln++] = (_label){NULL, 0};
+  u64 i            = 0;
   while (i < ntokens)
   {
+    size_t toklen = strlen(tokens[i]);
+    if (tokens[i][toklen - 1] == ':')
+    {
+      _label label = {tokens[i], *out_length};
+      if (labeln + 1 > labelc)
+      {
+        labels = realloc(labels, labelc *= 2);
+        if (labels == NULL)
+        {
+          _error("Memory allocation failure");
+          exit(1);
+        }
+      }
+      labels[labeln++] = label;
+      labels[labeln]   = (_label){NULL, 0};
+      i++;
+    }
     u8 op = _asm_opcode(tokens[i++]);
     _log("+ %s", _op_toks[op]);
     if (*out_length + 1 > bytec)
@@ -529,12 +642,14 @@ u8 *asm_comps(const char *code, u64 *out_length)
         bytes = tbytes;
       }
       _log(" %s", tokens[i]);
-      u64 arg = _asm_arg(tokens[i++]);
+      size_t arglen = 0;
+      u64 arg       = _asm_arg(tokens[i++], &arglen, labels);
       _pushv(bytes, *out_length, arg, alen);
       *out_length += alen;
     }
     _log("\n");
   }
+  free(labels);
   free(tokens);
   bytes              = realloc(bytes, (*out_length + 1) * sizeof(u8));
   bytes[*out_length] = 0;
@@ -769,6 +884,16 @@ void _op_gt(cpu c, u8 dst, u8 src)
   c->reg[dst] = c->reg[dst] > c->reg[src];
 }
 
+void _op_ls(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] = c->reg[dst] << (u8) c->reg[src];
+}
+
+void _op_rs(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] = c->reg[dst] >> (u8) c->reg[src];
+}
+
 //
 
 void _op_and(cpu c, u8 dst, u8 src)
@@ -815,19 +940,19 @@ void _op_sys(cpu c, u8 reg)
       switch (type)
       {
         case 0:
-          _log("%c", (char) data);
+          putc((char) data, stdout);
           break;
         case 1:
-          _log(_u8_fmt, (u8) data);
+          printf(_u8_fmt, (u8) data);
           break;
         case 2:
-          _log(_u16_fmt, (u16) data);
+          printf(_u16_fmt, (u16) data);
           break;
         case 3:
-          _log(_u32_fmt, (u32) data);
+          printf(_u32_fmt, (u32) data);
           break;
         case 4:
-          _log(_u64_fmt, (u64) data);
+          printf(_u64_fmt, (u64) data);
           break;
         default:
           _error(
