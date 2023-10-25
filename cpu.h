@@ -19,6 +19,7 @@ extern "C" {
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -223,7 +224,7 @@ typedef struct cpu
   u8 *mem;
 } *cpu;
 
-u8 *asm_compile(const char *code, u64 *out_length);
+u8 *asm_comps(const char *code, u64 *out_length);
 
 extern cpu cpu_new(u64 memc, u8 *mem);
 extern void cpu_run(cpu c);
@@ -286,13 +287,13 @@ const char *_op_toks[] = {
 #define _CPU_C
 
 #ifdef CPU_DEBUG
-#include <stdio.h>
 #define _log(FMT, ...) printf(FMT OPTARGS(__VA_ARGS__))
 #define _logl(FMT, ...) printf(FMT "\n" OPTARGS(__VA_ARGS__))
 #define _error(FMT, ...)                                                       \
   fprintf(stderr, "ERROR: " FMT "\n" OPTARGS(__VA_ARGS__))
 #else
 #define _log(FMT, ...)
+#define _logl(FMT, ...)
 #define _error(FMT, ...)
 #endif
 
@@ -349,39 +350,82 @@ bool _isdigit(const char *start, const size_t length)
   return i == length;
 }
 
-char **_asm_tokenize(const char *s, size_t *num_tokens)
+bool _notcode(const char c)
 {
-  int i, j, length, start, end, token_length, token_count = 0;
-  length = strlen(s);
-  for (i = 0; i < length; i++)
+  return isspace(c) || c == ';';
+}
+
+size_t _asm_count_tokens(const char *s)
+{
+  size_t length      = strlen(s);
+  size_t token_count = 0;
+  size_t i           = 0;
+  while (i < length)
   {
-    if (!isspace(s[i]) && (i == 0 || isspace(s[i - 1])))
+    if (s[i] == ';')
     {
-      token_count++;
-    }
-  }
-  char **tokens   = (char **) malloc(sizeof(char *) * token_count);
-  int token_index = 0;
-  for (i = 0; i < length; i++)
-  {
-    if (!isspace(s[i]) && (i == 0 || isspace(s[i - 1])))
-    {
-      start = i;
-      while (i < length && !isspace(s[i]))
+      while (s[i] != '\n' && i < length)
       {
         i++;
       }
-      end = i;
+    }
+    else if (_notcode(s[i]))
+    {
+      i++;
+    }
+    else
+    {
+      token_count++;
+      while (i < length && !_notcode(s[i]))
+      {
+        i++;
+      }
+    }
+  }
+  return token_count;
+}
 
+char **_asm_tokenize(const char *s, size_t *num_tokens)
+{
+  int i = 0, j = 0, start, end, token_length;
+  size_t length      = strlen(s);
+  size_t token_count = _asm_count_tokens(s);
+  char **tokens      = malloc(sizeof(char *) * token_count);
+  int token_index    = 0;
+  i                  = 0;
+  while (i < length)
+  {
+    if (s[i] == ';')
+    {
+      while (s[i] != '\n' && i < length)
+      {
+        i++;
+      }
+    }
+    else if (_notcode(s[i]))
+    {
+      i++;
+      continue;
+    }
+    else
+    {
+      start = i;
+      while (!_notcode(s[i]) && i < length)
+      {
+        i++;
+      }
+      end                 = i;
       token_length        = end - start;
-      tokens[token_index] = (char *) malloc(sizeof(char) * (token_length + 1));
+      tokens[token_index] = malloc(token_length + 1);
       for (j = 0; j < token_length; j++)
       {
         tokens[token_index][j] = s[start + j];
       }
-      tokens[token_index][token_length] = '\0';
-
-      token_index++;
+      tokens[token_index++][token_length] = '\0';
+      while (isspace(s[i]))
+      {
+        i++;
+      }
     }
   }
   *num_tokens = token_count;
@@ -414,7 +458,35 @@ u64 _asm_arg(const char *token)
   return strtoull(token, NULL, 0);
 }
 
-u8 *asm_compile(const char *code, u64 *out_length)
+u8 *asm_compf(const char *filepath, u64 *out_length)
+{
+  FILE *file = fopen(filepath, "rb");
+  if (file == NULL)
+  {
+    _error("Could not read file '%s'\n", filepath);
+  }
+  fseek(file, 0, SEEK_END);
+  size_t len = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  char *data = malloc(len + 1);
+  if (data == NULL)
+  {
+    fclose(file);
+    return NULL;
+  }
+  size_t read = fread(data, 1, len, file);
+  data[len]   = '\0';
+  fclose(file);
+  if (read != len)
+  {
+    _error("Could not read entire file '%s'\n", filepath);
+  }
+  u8 *result = asm_comps(data, out_length);
+  free(data);
+  return result;
+}
+
+u8 *asm_comps(const char *code, u64 *out_length)
 {
   if (!code || !out_length)
   {
@@ -427,10 +499,10 @@ u8 *asm_compile(const char *code, u64 *out_length)
     _error("Memory allocation failure");
     exit(1);
   }
-  size_t ntokens = 0;
   _logl("Compiling...");
-  char **tokens = _asm_tokenize(code, &ntokens);
-  u64 i         = 0;
+  size_t ntokens = 0;
+  char **tokens  = _asm_tokenize(code, &ntokens);
+  u64 i = 0;
   while (i < ntokens)
   {
     u8 op = _asm_op(tokens[i++]);
