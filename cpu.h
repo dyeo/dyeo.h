@@ -593,6 +593,20 @@ u8 *asm_comps(const char *code, u64 *out_length)
   while (i < ntokens)
   {
     size_t toklen = strlen(tokens[i]);
+    if (tokens[i][0] == '.')
+    {
+      if (strcmp(tokens[i] + 1, "raw") == 0)
+      {
+        i++;
+        while (i < ntokens && strcmp(tokens[i], ".code") != 0)
+        {
+          size_t arglen = 0;
+          u64 arg       = _asm_arg(tokens[i++], &arglen, labels);
+          _pushv(bytes, *out_length, arg, arglen);
+          *out_length += arglen;
+        }
+      }
+    }
     if (tokens[i][toklen - 1] == ':')
     {
       _label label = {tokens[i], *out_length};

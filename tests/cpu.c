@@ -1,4 +1,4 @@
-//#define CPU_DEBUG
+#define CPU_DEBUG
 #define CPU_IMPLEMENTATION
 #include "../cpu.h"
 
