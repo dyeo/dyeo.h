@@ -80,6 +80,7 @@ int main()
     test_expr(mathe("tan(pi)"), double, 0.0);
 
     // For sqrt(x)
+    test_expr(isnan(mathe("sqrt(-1)")), bool, true);
     test_expr(mathe("sqrt(0)"), double, 0.0);
     test_expr(mathe("sqrt(1)"), double, 1.0);
     test_expr(mathe("sqrt(4)"), double, 2.0);
