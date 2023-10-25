@@ -56,6 +56,7 @@ extern REAL mathe(const char *expression);
 #define X_OPS_LIST                                                             \
   X(lpr)                                                                       \
   X(rpr)                                                                       \
+  X(min)                                                                       \
   X(exp)                                                                       \
   X(mlt)                                                                       \
   X(div)                                                                       \
@@ -123,14 +124,14 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen)
         tok = (_me_tok){true, me_add};
         break;
       case '-':
-        if (i != 0 && *toklen != 0 &&
-            (!tokens[*toklen - 1].isop || tokens[*toklen - 1].op == me_rpr))
+        if (i == 0 || (i != 0 && (tokens[*toklen - 1].isop &&
+                                  tokens[*toklen - 1].op != me_rpr)))
         {
-          tok = (_me_tok){true, me_sub};
+          tok = (_me_tok){true, me_min};
         }
         else
         {
-          tok = (_me_tok){false, (double) strtold(expr + i, NULL)};
+          tok = (_me_tok){true, me_sub};
         }
         break;
     }
@@ -170,6 +171,10 @@ _me_tok *_me_shuntingyard(_me_tok *tokens, const size_t toklen, size_t *outlen)
     if (!tokens[i].isop)
     {
       output[olen++] = tokens[i++];
+    }
+    else if (tokens[i].op == me_min)
+    {
+      stack[slen++] = tokens[i++];
     }
     else if (tokens[i].op == me_lpr)
     {
@@ -228,13 +233,25 @@ REAL mathe(const char *expr)
     }
     else
     {
+      if (tokens[i].op == me_min)
+      {
+        if (slen < 1)
+        {
+          free(stack);
+          free(tokens);
+          return NAN;
+        }
+        REAL r        = stack[--slen];
+        stack[slen++] = -r;
+        continue;
+      }
+
       if (slen < 2)
       {
         free(stack);
         free(tokens);
         return NAN;
       }
-
       REAL r = stack[--slen];
       REAL l = stack[--slen];
       switch (tokens[i].op)
