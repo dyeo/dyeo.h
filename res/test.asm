@@ -1,5 +1,5 @@
 set r0 0
-set r1 420
+set r1 420 ; haha
 set r2 69
 set i0 4 ; haha
 swp i1 r1

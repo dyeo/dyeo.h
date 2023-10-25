@@ -422,10 +422,6 @@ char **_asm_tokenize(const char *s, size_t *num_tokens)
         tokens[token_index][j] = s[start + j];
       }
       tokens[token_index++][token_length] = '\0';
-      while (isspace(s[i]))
-      {
-        i++;
-      }
     }
   }
   *num_tokens = token_count;
