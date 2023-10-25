@@ -78,6 +78,12 @@ extern "C" {
   X(psh, u8) /* push reg to stack */                                           \
   X(pek, u8) /* peek stack to reg */                                           \
   X(pop, u8) /* pop stack to reg */                                            \
+  /* jumping */                                                                \
+  X(jmp, u64) /* jump to addr if i1 != 0*/                                     \
+  X(jz0, u64) /* jump to addr if i1 != 0*/                                     \
+  X(jn0, u64) /* jump to addr if i0 != 0*/                                     \
+  X(jz1, u64) /* jump to addr if i0 == 0*/                                     \
+  X(jn1, u64) /* jump to addr if i1 == 0*/                                     \
   /**/                                                                         \
   X(sys, u8) /* system calls */                                                \
   X(hlt)     /* end the execution */
@@ -428,7 +434,7 @@ char **_asm_tokenize(const char *s, size_t *num_tokens)
   return tokens;
 }
 
-u8 _asm_op(const char *token)
+u8 _asm_opcode(const char *token)
 {
   for (u8 i = 0; i < CPU_OP_COUNT; ++i)
   {
@@ -437,9 +443,7 @@ u8 _asm_op(const char *token)
       return i;
     }
   }
-  _error("Expected opcode, got '%s", token);
-  exit(1);
-  return 0;
+  return -1;
 }
 
 u64 _asm_arg(const char *token)
@@ -452,34 +456,6 @@ u64 _asm_arg(const char *token)
     }
   }
   return strtoull(token, NULL, 0);
-}
-
-u8 *asm_compf(const char *filepath, u64 *out_length)
-{
-  FILE *file = fopen(filepath, "rb");
-  if (file == NULL)
-  {
-    _error("Could not read file '%s'\n", filepath);
-  }
-  fseek(file, 0, SEEK_END);
-  size_t len = ftell(file);
-  fseek(file, 0, SEEK_SET);
-  char *data = malloc(len + 1);
-  if (data == NULL)
-  {
-    fclose(file);
-    return NULL;
-  }
-  size_t read = fread(data, 1, len, file);
-  data[len]   = '\0';
-  fclose(file);
-  if (read != len)
-  {
-    _error("Could not read entire file '%s'\n", filepath);
-  }
-  u8 *result = asm_comps(data, out_length);
-  free(data);
-  return result;
 }
 
 u8 *asm_comps(const char *code, u64 *out_length)
@@ -498,10 +474,10 @@ u8 *asm_comps(const char *code, u64 *out_length)
   _logl("Compiling...");
   size_t ntokens = 0;
   char **tokens  = _asm_tokenize(code, &ntokens);
-  u64 i = 0;
+  u64 i          = 0;
   while (i < ntokens)
   {
-    u8 op = _asm_op(tokens[i++]);
+    u8 op = _asm_opcode(tokens[i++]);
     _log("+ %s", _op_toks[op]);
     if (*out_length + 1 > bytec)
     {
@@ -545,6 +521,34 @@ u8 *asm_comps(const char *code, u64 *out_length)
   bytes[*out_length] = 0;
   _log("\n");
   return bytes;
+}
+
+u8 *asm_compf(const char *filepath, u64 *out_length)
+{
+  FILE *file = fopen(filepath, "rb");
+  if (file == NULL)
+  {
+    _error("Could not read file '%s'\n", filepath);
+  }
+  fseek(file, 0, SEEK_END);
+  size_t len = ftell(file);
+  fseek(file, 0, SEEK_SET);
+  char *data = malloc(len + 1);
+  if (data == NULL)
+  {
+    fclose(file);
+    return NULL;
+  }
+  size_t read = fread(data, 1, len, file);
+  data[len]   = '\0';
+  fclose(file);
+  if (read != len)
+  {
+    _error("Could not read entire file '%s'\n", filepath);
+  }
+  u8 *result = asm_comps(data, out_length);
+  free(data);
+  return result;
 }
 
 cpu cpu_new(u64 memc, u8 *mem)
@@ -659,6 +663,35 @@ void _op_pek(cpu c, u8 reg)
 void _op_pop(cpu c, u8 reg)
 {
   c->reg[reg] = c->stk[c->sp -= 1];
+}
+
+void _op_jmp(cpu c, u64 addr)
+{
+  c->ip = addr;
+}
+
+void _op_jz0(cpu c, u64 addr)
+{
+  const u64 addrs[] = {c->ip, addr};
+  c->ip             = addrs[c->i0 == 0];
+}
+
+void _op_jn0(cpu c, u64 addr)
+{
+  const u64 addrs[] = {c->ip, addr};
+  c->ip             = addrs[c->i0 != 0];
+}
+
+void _op_jz1(cpu c, u64 addr)
+{
+  const u64 addrs[] = {c->ip, addr};
+  c->ip             = addrs[c->i1 == 0];
+}
+
+void _op_jn1(cpu c, u64 addr)
+{
+  const u64 addrs[] = {c->ip, addr};
+  c->ip             = addrs[c->i1 != 0];
 }
 
 void _op_sys(cpu c, u8 reg)
