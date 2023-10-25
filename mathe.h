@@ -85,17 +85,20 @@ typedef struct _me_tok
   };
 } _me_tok;
 
+#define RESIZE(ARRAY, LENGTH, CAPACITY, AMOUNT)                                \
+  if (LENGTH + AMOUNT > CAPACITY)                                              \
+  {                                                                            \
+    CAPACITY *= 2;                                                             \
+    ARRAY = realloc(tokens, CAPACITY * sizeof(_me_tok));                       \
+  }
+
 #define PUSH_VAL(VAL, LEN)                                                     \
   do                                                                           \
   {                                                                            \
-    if (*toklen + 1 > tokcap)                                                  \
+    RESIZE(tokens, *toklen, tokcap, 1);                                        \
+    if (!tokens)                                                               \
     {                                                                          \
-      tokcap *= 2;                                                             \
-      tokens = realloc(tokens, tokcap * sizeof(_me_tok));                      \
-      if (!tokens)                                                             \
-      {                                                                        \
-        return NULL;                                                           \
-      }                                                                        \
+      return NULL;                                                             \
     }                                                                          \
     tokens[*toklen].isop = false;                                              \
     tokens[*toklen].val  = VAL;                                                \
@@ -106,14 +109,10 @@ typedef struct _me_tok
 #define PUSH_OP(OP)                                                            \
   do                                                                           \
   {                                                                            \
-    if (*toklen + 1 > tokcap)                                                  \
+    RESIZE(tokens, *toklen, tokcap, 1);                                        \
+    if (!tokens)                                                               \
     {                                                                          \
-      tokcap *= 2;                                                             \
-      tokens = realloc(tokens, tokcap * sizeof(_me_tok));                      \
-      if (!tokens)                                                             \
-      {                                                                        \
-        return NULL;                                                           \
-      }                                                                        \
+      return NULL;                                                             \
     }                                                                          \
     tokens[*toklen].isop = true;                                               \
     tokens[*toklen].op   = OP;                                                 \
