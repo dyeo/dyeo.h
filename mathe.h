@@ -54,23 +54,23 @@ extern REAL mathe(const char *expression);
 // -----------------------------------------------------------------------------
 
 #define X_OPS_LIST                                                             \
-  X(lpr, 0)                                                                    \
-  X(rpr, 0)                                                                    \
-  X(exp, 4)                                                                    \
-  X(mlt, 3)                                                                    \
-  X(div, 3)                                                                    \
-  X(mod, 3)                                                                    \
-  X(add, 2)                                                                    \
-  X(sub, 2)
+  X(lpr)                                                                       \
+  X(rpr)                                                                       \
+  X(exp)                                                                       \
+  X(mlt)                                                                       \
+  X(div)                                                                       \
+  X(mod)                                                                       \
+  X(add)                                                                       \
+  X(sub)
 
-#define X(V, ...) me_##V,
+#define X(V) me_##V,
 typedef enum _me_op
 {
   X_OPS_LIST
 } _me_op;
 #undef X
 
-#define X(V, ...) #V,
+#define X(V) #V,
 const char *_op_names[] = {X_OPS_LIST};
 #undef X
 
