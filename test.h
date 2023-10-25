@@ -1,7 +1,8 @@
 #ifndef __TEST_H__
 #define __TEST_H__
 
-#include "inttypes.h"
+#include <inttypes.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -82,6 +83,21 @@
 // add your own before including to automatically support testing!
 // ---------------------------------------------------------------------------------------------------------------------
 
+int feqf(float a, float b)
+{
+  return fabs(a - b) < 1.e-5f;
+}
+
+int feq(double a, double b)
+{
+  return fabs(a - b) < 1.e-6f;
+}
+
+int feql(long double a, long double b)
+{
+  return fabs(a - b) < 1.e-7f;
+}
+
 #define _test_h_t_PFmt ""
 #define _test_h_t_PArg(v) v
 #define _test_h_t_ExEq(l, r) l == r
@@ -137,9 +153,9 @@
 #define _uint32_t_ExEq(l, r) _test_h_t_ExEq(l, r)
 #define _uint64_t_ExEq(l, r) _test_h_t_ExEq(l, r)
 #define _char_ExEq(l, r) _test_h_t_ExEq(l, r)
-#define _float_ExEq(l, r) _test_h_t_ExEq(l, r)
-#define _double_ExEq(l, r) _test_h_t_ExEq(l, r)
-#define _long_double_ExEq(l, r) _test_h_t_ExEq(l, r)
+#define _float_ExEq(l, r) feqf(l, r)
+#define _double_ExEq(l, r) feq(l, r)
+#define _long_double_ExEq(l, r) feql(l, r)
 #define _string_ExEq(l, r) _test_h_t_ExEq(l, r)
 #define _pointer_ExEq(l, r) _test_h_t_ExEq(l, r)
 #define _bool_ExEq(l, r) _test_h_t_ExEq(l, r)
