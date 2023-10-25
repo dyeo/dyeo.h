@@ -67,13 +67,12 @@ extern "C" {
   X(r9)
 
 #define X_LIST_OPS                                                             \
-  X(nop) /* noop */                                                            \
   /* memory manipulation */                                                    \
   X(set, u8, u64) /* reg[$0] = val */                                          \
   X(mov, u8, u8)  /* reg[$0] = reg[$1] */                                      \
   X(lod, u8, u64) /* reg[$0] = mem[$1] */                                      \
   X(str, u64, u8) /* mem[$0] = reg[$1] */                                      \
-  X(swp, u8, u8)  /* swap mem[$0] and reg[$1] */                               \
+  X(swp, u8, u8)  /* swap reg[$0] and reg[$1] */                               \
   /* stack manipulation */                                                     \
   X(psh, u8) /* push reg to stack */                                           \
   X(pek, u8) /* peek stack to reg */                                           \
@@ -84,7 +83,27 @@ extern "C" {
   X(jn0, u64) /* jump to addr if i0 != 0*/                                     \
   X(jz1, u64) /* jump to addr if i0 == 0*/                                     \
   X(jn1, u64) /* jump to addr if i1 == 0*/                                     \
-  /**/                                                                         \
+  /* mathematics */                                                            \
+  X(add, u8, u8) /* reg[$0] += reg[$1] */                                      \
+  X(sub, u8, u8) /* reg[$0] -= reg[$1] */                                      \
+  X(mul, u8, u8) /* reg[$0] *= reg[$1] */                                      \
+  X(div, u8, u8) /* reg[$0] /= reg[$1] */                                      \
+  X(mod, u8, u8) /* reg[$0] %= reg[$1] */                                      \
+  X(neg, u8)     /* reg[$0] = -reg[$0] */                                      \
+  /* comparisons */                                                            \
+  X(lt, u8, u8) /* reg[$0] = reg[$0] < reg[$1] */                              \
+  X(le, u8, u8) /* reg[$0] = reg[$0] <= reg[$1] */                             \
+  X(eq, u8, u8) /* reg[$0] = reg[$0] == reg[$1] */                             \
+  X(ne, u8, u8) /* reg[$0] = reg[$0] != reg[$1] */                             \
+  X(ge, u8, u8) /* reg[$0] = reg[$0] >= reg[$1] */                             \
+  X(gt, u8, u8) /* reg[$0] = reg[$0] > reg[$1] */                              \
+  /* logic operators */                                                        \
+  X(and, u8, u8) /* reg[$0] &= reg[$1] */                                      \
+  X(or, u8, u8)  /* reg[$0] |= reg[$1] */                                      \
+  X(xor, u8, u8) /* reg[$0] ^= reg[$1] */                                      \
+  X(not, u8)     /* reg[$0] = ~reg[$0] */                                      \
+  /* miscellaneous */                                                          \
+  X(nop)     /* noop */                                                        \
   X(sys, u8) /* system calls */                                                \
   X(hlt)     /* end the execution */
 
@@ -692,6 +711,86 @@ void _op_jn1(cpu c, u64 addr)
 {
   const u64 addrs[] = {c->ip, addr};
   c->ip             = addrs[c->i1 != 0];
+}
+
+void _op_add(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] += c->reg[src];
+}
+
+void _op_sub(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] -= c->reg[src];
+}
+
+void _op_mul(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] *= c->reg[src];
+}
+
+void _op_div(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] /= c->reg[src];
+}
+
+void _op_mod(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] %= c->reg[src];
+}
+
+void _op_neg(cpu c, u8 dst)
+{
+  c->reg[dst] = -c->reg[dst];
+}
+
+void _op_lt(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] = c->reg[dst] < c->reg[src];
+}
+
+void _op_le(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] = c->reg[dst] <= c->reg[src];
+}
+
+void _op_eq(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] = c->reg[dst] == c->reg[src];
+}
+
+void _op_ne(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] = c->reg[dst] != c->reg[src];
+}
+
+void _op_ge(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] = c->reg[dst] >= c->reg[src];
+}
+
+void _op_gt(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] = c->reg[dst] > c->reg[src];
+}
+
+void _op_and(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] &= c->reg[src];
+}
+
+void _op_or(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] |= c->reg[src];
+}
+
+void _op_xor(cpu c, u8 dst, u8 src)
+{
+  c->reg[dst] ^= c->reg[src];
+}
+
+void _op_not(cpu c, u8 dst)
+{
+  c->reg[dst] = ~c->reg[dst];
 }
 
 void _op_sys(cpu c, u8 reg)
