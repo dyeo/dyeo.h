@@ -11,28 +11,28 @@ extern "C" {
 #define MATHE_PRECISION double
 #endif
 
-#define REAL MATHE_PRECISION
+#define _me_real MATHE_PRECISION
 
 #ifdef MATHE_RELEASE
-#define MATHE_RELEASE_MAIN main
+#define _mathe_main main
 #else
-#define MATHE_RELEASE_MAIN mathe_main
+#define _mathe_main mathe_main
 #endif
 
 // -----------------------------------------------------------------------------
 
-REAL fsign(const REAL v)
+_me_real fsign(const _me_real v)
 {
   return (0 < v) - (v < 0);
 }
 
 #define mathe(...) mathe_eval(__VA_ARGS__, NULL, 0.0)
-extern REAL mathe_eval(const char *expr, ...);
-extern int MATHE_RELEASE_MAIN(int argc, char **argv);
+extern _me_real mathe_eval(const char *expr, ...);
+extern int _mathe_main(int argc, char **argv);
 
 // -----------------------------------------------------------------------------
 
-#undef REAL
+#undef _me_real
 
 #ifdef __cplusplus
 }
@@ -70,12 +70,12 @@ extern int MATHE_RELEASE_MAIN(int argc, char **argv);
 #endif
 
 #ifdef MATHE_RELEASE
-#define MATHE_RELEASE_MAIN main
+#define _mathe_main main
 #else
-#define MATHE_RELEASE_MAIN mathe_main
+#define _mathe_main mathe_main
 #endif
 
-#define REAL MATHE_PRECISION
+#define _me_real MATHE_PRECISION
 
 #ifdef MATHE_DEBUG
 #if defined(__gnuc__) || defined(__clang__)
@@ -149,7 +149,7 @@ const char *_me_func_names[] = {X_FUNCS_LIST NULL};
 const size_t _me_func_namelens[] = {X_FUNCS_LIST 0};
 #undef X
 #define X(V, P, ...) P,
-REAL (*const _me_func_ptrs[])(REAL) = {X_FUNCS_LIST NULL};
+_me_real (*const _me_func_ptrs[])(_me_real) = {X_FUNCS_LIST NULL};
 #undef X
 
 #define X(V) me_##V,
@@ -171,9 +171,9 @@ typedef struct _me_tok
     struct
     {
       _me_op op;
-      REAL (*fun)(REAL);
+      _me_real (*fun)(_me_real);
     };
-    REAL val;
+    _me_real val;
   };
 } _me_tok;
 
@@ -434,7 +434,7 @@ _me_tok *_me_shuntingyard(_me_tok *tokens, const size_t toklen, size_t *outlen)
   return resized_output;
 }
 
-REAL mathe_eval(const char *expr, ...)
+_me_real mathe_eval(const char *expr, ...)
 {
   size_t varsc = 32, varsn = 0;
   _mathv *vars = malloc(varsc * sizeof(_mathv));
@@ -467,8 +467,8 @@ REAL mathe_eval(const char *expr, ...)
   _me_print_toks(tokens, count);
   tokens = _me_shuntingyard(tokens, count, &count);
   _me_print_toks(tokens, count);
-  size_t slen = 0;
-  REAL *stack = calloc(count, sizeof(REAL));
+  size_t slen     = 0;
+  _me_real *stack = calloc(count, sizeof(_me_real));
   for (size_t i = 0; i < count; ++i)
   {
     if (!tokens[i].isop)
@@ -507,8 +507,8 @@ REAL mathe_eval(const char *expr, ...)
         free(tokens);
         return NAN;
       }
-      REAL r = stack[--slen];
-      REAL l = stack[--slen];
+      _me_real r = stack[--slen];
+      _me_real l = stack[--slen];
       switch (tokens[i].op)
       {
         default:
@@ -535,13 +535,13 @@ REAL mathe_eval(const char *expr, ...)
       }
     }
   }
-  REAL result = stack[0];
+  _me_real result = stack[0];
   free(stack);
   free(tokens);
   return result;
 }
 
-int MATHE_RELEASE_MAIN(int argc, char *argv[])
+int _mathe_main(int argc, char *argv[])
 {
   if (argc < 2)
   {
@@ -578,8 +578,8 @@ int MATHE_RELEASE_MAIN(int argc, char *argv[])
 
 // -----------------------------------------------------------------------------
 
-#undef MATHE_RELEASE_MAIN
-#undef REAL
+#undef _mathe_main
+#undef _me_real
 
 // -----------------------------------------------------------------------------
 
