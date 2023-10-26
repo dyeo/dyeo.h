@@ -1,11 +1,15 @@
 #define MATHE_PRECISION double
 #define MATHE_IMPLEMENTATION
+#define MATHE_DEBUG
 #include "../mathe.h"
 #include "../test.h"
 
 int main()
 {
   test_group(mathe, {
+    test_expr(mathe("x + 2", "x", 2.0), double, 4.0);
+    test_expr(mathe("(x) + 2", "x", 2.0), double, 4.0);
+    test_expr(mathe("(x+x) + 2", "x", 2.0), double, 6.0);
     // Basic operations
     test_expr(mathe("pi"), double, 3.141592653589793);
     test_expr(mathe("e"), double, 2.718281828459045);
@@ -85,7 +89,7 @@ int main()
     test_expr(mathe("sqrt(4)"), double, 2.0);
     test_expr(mathe("sqrt(9)"), double, 3.0);
     test_expr(mathe("sqrt(16)"), double, 4.0);
-    
+
     test_expr(mathe("asin(0.5)"), double, 0.5235987755982989);
     test_expr(mathe("acos(0.5)"), double, 1.0471975511965979);
     test_expr(mathe("atan(0.5)"), double, 0.4636476090008061);

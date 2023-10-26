@@ -26,7 +26,8 @@ REAL fsign(const REAL v)
   return (0 < v) - (v < 0);
 }
 
-extern REAL mathe(const char *expression);
+#define mathe(...) mathe_eval(__VA_ARGS__, NULL, 0.0)
+extern REAL mathe_eval(const char *expr, ...);
 extern int MATHE_RELEASE_MAIN(int argc, char **argv);
 
 // -----------------------------------------------------------------------------
@@ -52,6 +53,7 @@ extern int MATHE_RELEASE_MAIN(int argc, char **argv);
 #include <ctype.h>
 #include <float.h>
 #include <math.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -74,6 +76,16 @@ extern int MATHE_RELEASE_MAIN(int argc, char **argv);
 #endif
 
 #define REAL MATHE_PRECISION
+
+#ifdef MATHE_DEBUG
+#if defined(__gnuc__) || defined(__clang__)
+#define _me_log(FMT, ...) printf(FMT, ##__VA_ARGS__)
+#else
+#define _me_log(FMT, ...) printf(FMT, __VA_ARGS__)
+#endif
+#else
+#define _me_log(FMT, ...)
+#endif
 
 // -----------------------------------------------------------------------------
 
@@ -218,7 +230,50 @@ typedef struct _me_tok
 #define streq(StrA, StrB, StrAN)                                               \
   (StrAN == strlen(StrB) && !memcmp(StrA, StrB, StrAN))
 
-_me_tok *_me_tokenize(const char *expr, size_t *toklen)
+typedef struct _mathv
+{
+  char *token;
+  double val;
+} _mathv;
+
+void _me_print_toks(_me_tok *tokens, size_t count)
+{
+  if (!tokens || count == 0)
+  {
+    _me_log("Tokens are empty or null.");
+    return;
+  }
+
+  for (size_t i = 0; i < count; ++i)
+  {
+    if (tokens[i].isop)
+    {
+      if (tokens[i].op == me_fun)
+      {
+        for (int f = 0; _me_func_names[f] != NULL; ++f)
+        {
+          if (_me_func_ptrs[f] == tokens[i].fun)
+          {
+            _me_log("%s ", _me_func_names[f]);
+            break;
+          }
+        }
+      }
+      else
+      {
+        _me_log("%s ", _op_names[tokens[i].op]);
+      }
+    }
+    else
+    {
+      _me_log("%f ", tokens[i].val);
+    }
+  }
+  _me_log("\n"); // Newline at the end
+}
+
+_me_tok *_me_tokenize(const char *expr, size_t *toklen, size_t varsn,
+                      _mathv *vars)
 {
   size_t tokcap   = 32;
   _me_tok *tokens = malloc(tokcap * sizeof(_me_tok));
@@ -241,22 +296,31 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen)
       {
         tlen += 1;
       }
+      for (int f = 0; _me_func_names[f] != NULL; ++f)
+      {
+        if (streq(token, _me_func_names[f], tlen))
+        {
+          PUSH_FUN(_me_func_ptrs[f], tlen);
+          break;
+        }
+      }
       for (int c = 0; _me_const_names[c] != NULL; ++c)
       {
         if (streq(token, _me_const_names[c], tlen))
         {
           PUSH_VAL(_me_const_vals[c], tlen);
-          continue;
+          break;
         }
       }
-      for (int c = 0; _me_func_names[c] != NULL; ++c)
+      for (int v = 0; v < varsn; ++v)
       {
-        if (streq(token, _me_func_names[c], tlen))
+        if (streq(token, vars[v].token, tlen))
         {
-          PUSH_FUN(_me_func_ptrs[c], tlen);
-          continue;
+          PUSH_VAL(vars[v].val, tlen);
+          break;
         }
       }
+      continue;
     }
     if (!tok.isop)
     {
@@ -368,13 +432,41 @@ _me_tok *_me_shuntingyard(_me_tok *tokens, const size_t toklen, size_t *outlen)
   return resized_output;
 }
 
-REAL mathe(const char *expr)
+REAL mathe_eval(const char *expr, ...)
 {
+  size_t varsc = 32, varsn = 0;
+  _mathv *vars = malloc(varsc * sizeof(_mathv));
+  va_list args;
+  va_start(args, expr);
+  char *vtok  = NULL;
+  double vval = 0.0;
+  while ((vtok = va_arg(args, char *)) != NULL)
+  {
+    vval = va_arg(args, double);
+    if (varsn >= varsc)
+    {
+      vars = realloc(vars, (varsc *= 2) * sizeof(_mathv));
+      if (!vars)
+      {
+        fprintf(stderr, "ERROR: Memory allocation failure");
+        return 0.0;
+      }
+    }
+    vars[varsn].token = vtok;
+    vars[varsn].val   = vval;
+    varsn++;
+  }
+  va_end(args);
+  vars  = realloc(vars, varsn * sizeof(_mathv));
+  varsc = varsn;
+
   size_t count    = 0;
-  _me_tok *tokens = _me_tokenize(expr, &count);
-  tokens          = _me_shuntingyard(tokens, count, &count);
-  size_t slen     = 0;
-  REAL *stack     = calloc(count, sizeof(REAL));
+  _me_tok *tokens = _me_tokenize(expr, &count, varsn, vars);
+  _me_print_toks(tokens, count);
+  tokens = _me_shuntingyard(tokens, count, &count);
+  _me_print_toks(tokens, count);
+  size_t slen = 0;
+  REAL *stack = calloc(count, sizeof(REAL));
   for (size_t i = 0; i < count; ++i)
   {
     if (!tokens[i].isop)
@@ -476,7 +568,7 @@ int MATHE_RELEASE_MAIN(int argc, char *argv[])
     strcat(expr, " ");
     strcat(expr, argv[i]);
   }
-  double result = mathe(expr);
+  double result = mathe_eval(expr);
   printf("%f\n", result);
   free(expr);
   return 0;
