@@ -297,19 +297,19 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen, size_t varsn,
       {
         tlen += 1;
       }
-      for (int f = 0; _me_func_names[f] != NULL; ++f)
-      {
-        if (streq(token, _me_func_names[f], tlen))
-        {
-          PUSH_FUN(_me_func_ptrs[f], tlen);
-          goto done;
-        }
-      }
       for (int c = 0; _me_const_names[c] != NULL; ++c)
       {
         if (streq(token, _me_const_names[c], tlen))
         {
           PUSH_VAL(_me_const_vals[c], tlen);
+          goto done;
+        }
+      }
+      for (int f = 0; _me_func_names[f] != NULL; ++f)
+      {
+        if (streq(token, _me_func_names[f], tlen))
+        {
+          PUSH_FUN(_me_func_ptrs[f], tlen);
           goto done;
         }
       }
