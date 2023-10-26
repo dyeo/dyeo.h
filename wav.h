@@ -1075,15 +1075,41 @@ void CALLBACK _pcm_out_win32(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance,
   (void) dwParam2;
   if (uMsg == WOM_DONE)
   {
+    WAVEHDR *waveHeader = (WAVEHDR *) dwParam1;
     waveOutUnprepareHeader(_wav_win32_h_wav_out, &_wav_win32_header,
                            sizeof(WAVEHDR));
+    free(waveHeader->lpData); // This frees the playData
     GlobalFree(_wav_win32_h_header);
     waveOutClose(_wav_win32_h_wav_out);
   }
 }
 
+char *_wav_deinterleave(char **channels, uint32_t channelCount,
+                        uint32_t sampleCount, uint16_t bitDepth)
+{
+  int bytesPerSample  = bitDepth / 8;
+  uint64_t outputSize = sampleCount * channelCount * bytesPerSample;
+  char *output        = (char *) malloc(outputSize);
+  if (!output)
+  {
+    return NULL;
+  }
+  for (uint32_t sample = 0; sample < sampleCount; ++sample)
+  {
+    for (uint32_t channel = 0; channel < channelCount; ++channel)
+    {
+    char *currentChannel = channels[channel];
+    for (int byte = 0; byte < bytesPerSample; ++byte)
+    {
+      *output++ = currentChannel[sample * bytesPerSample + byte];
+    }
+    }
+  }
+  return output - outputSize;
+}
+
 void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
-                   uint32_t sampleCount, uint16_t bitDepth, char *data)
+                   uint32_t sampleCount, uint16_t bitDepth, char **data)
 {
   WAVEFORMATEX wfx;
   uint64_t bufferLength = sampleCount * channels * (bitDepth / 8);
@@ -1103,7 +1129,8 @@ void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
   }
   _wav_win32_h_header =
     GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(WAVEHDR));
-  _wav_win32_header.lpData         = data;
+  char *playData = _wav_deinterleave(data, channels, sampleCount, bitDepth);
+  _wav_win32_header.lpData = playData;
   _wav_win32_header.dwBufferLength = bufferLength;
   waveOutPrepareHeader(_wav_win32_h_wav_out, &_wav_win32_header,
                        sizeof(WAVEHDR));
@@ -1196,7 +1223,7 @@ bool wav_play_async(const wav_t wav)
   {                                                                            \
     _wav_play_pcm(WAVFORMAT_lookup[wav_##NAME], wav->channels,                 \
                   wav->sampleRate, wav->sampleCount, sizeof **(wav->NAME) * 8, \
-                  (char *) wav->NAME);                                         \
+                  (char **) wav->NAME);                                        \
     break;                                                                     \
   }
     WAV_FORMAT_X_LIST
