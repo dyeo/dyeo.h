@@ -292,7 +292,8 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen, size_t varsn,
     {
       const char *token = expr + i;
       size_t tlen       = 1;
-      while (token[tlen] && isalnum(token[tlen]))
+      while (token[tlen] && isalpha(token[tlen]) || isdigit(token[tlen]) ||
+             token[tlen] == '_')
       {
         tlen += 1;
       }
