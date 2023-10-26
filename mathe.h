@@ -13,6 +13,12 @@ extern "C" {
 
 #define REAL MATHE_PRECISION
 
+#ifdef MATHE_RELEASE
+#define MATHE_RELEASE_MAIN main
+#else
+#define MATHE_RELEASE_MAIN mathe_main
+#endif
+
 // -----------------------------------------------------------------------------
 
 REAL fsign(const REAL v)
@@ -21,6 +27,7 @@ REAL fsign(const REAL v)
 }
 
 extern REAL mathe(const char *expression);
+extern int MATHE_RELEASE_MAIN(int argc, char **argv);
 
 // -----------------------------------------------------------------------------
 
@@ -35,6 +42,12 @@ extern REAL mathe(const char *expression);
 #endif
 
 // -----------------------------------------------------------------------------
+
+#ifdef _MSC_VER
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#endif
 
 #include <ctype.h>
 #include <float.h>
@@ -52,6 +65,12 @@ extern REAL mathe(const char *expression);
 
 #ifndef MATHE_PRECISION
 #define MATHE_PRECISION double
+#endif
+
+#ifdef MATHE_RELEASE
+#define MATHE_RELEASE_MAIN main
+#else
+#define MATHE_RELEASE_MAIN mathe_main
 #endif
 
 #define REAL MATHE_PRECISION
@@ -428,8 +447,44 @@ REAL mathe(const char *expr)
   return result;
 }
 
+int MATHE_RELEASE_MAIN(int argc, char *argv[])
+{
+  if (argc < 2)
+  {
+    printf("Usage: %s expr\n", argv[0]);
+    return 1;
+  }
+  int len = 0;
+  for (int i = 1; i < argc; i++)
+  {
+    len += strlen(argv[i]);
+    if (i < argc - 1)
+    {
+      len++;
+    }
+  }
+  len++;
+  char *expr = (char *) malloc(len * sizeof(char));
+  if (!expr)
+  {
+    perror("Failed to allocate memory");
+    return 1;
+  }
+  strcpy(expr, argv[1]);
+  for (int i = 2; i < argc; i++)
+  {
+    strcat(expr, " ");
+    strcat(expr, argv[i]);
+  }
+  double result = mathe(expr);
+  printf("%f\n", result);
+  free(expr);
+  return 0;
+}
+
 // -----------------------------------------------------------------------------
 
+#undef MATHE_RELEASE_MAIN
 #undef REAL
 
 // -----------------------------------------------------------------------------

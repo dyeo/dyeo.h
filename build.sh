@@ -3,21 +3,34 @@
 set -e
 
 if [[ $OSTYPE == msys* || $OSTYPE == mingw* || $OSTYPE == cygwin* ]]; then
+    OS=win32
     EXT=".exe"
-    LIBRARIES="-lShlwapi -lwinmm -lws2_32"
+    LIBRARIES=""
 else
+    OS=posix
     EXT=""
-    LIBRARIES="-lm -lasound -lnsl -lresolv"
+    LIBRARIES=""
 fi
 
 mkdir -p out
 mkdir -p res
 
 cd out
-cp -r ../res res/
+cp -r ../res res
 
+declare -A BUILD_ARGS
 declare -A TEST_ARGS
 TEST_ARGS["args"]="-something2=1 -a -c args.exe"
+BUILD_ARGS["gm"]="-lm"
+BUILD_ARGS["mathe"]="-lm"
+BUILD_ARGS["wav"]="-lm"
+if [[ $OS == win32 ]]; then
+    BUILD_ARGS["wav"]="-lwinmm"
+    BUILD_ARGS["udp"]="-lws2_32"
+else
+    BUILD_ARGS["wav"]="-lasound"
+    BUILD_ARGS["udp"]="-lnsl -lresolv"
+fi
 
 if [[ "$1" == "ALL" ]]; then
     APPS=()
@@ -29,10 +42,17 @@ else
 fi
 
 for APP in "${APPS[@]}"; do
-    cc="clang "../tests/$APP.c" \
-        -Werror \
+    if [[ -n "${BUILD_ARGS[$APP]}" ]]; then
+        cc="clang "../tests/$APP.c" \
+        -O3 -Werror \
+        -o "./$APP$EXT" \
+        $LIBRARIES ${BUILD_ARGS[$APP]}"
+    else
+        cc="clang "../tests/$APP.c" \
+        -O3 -Werror \
         -o "./$APP$EXT" \
         $LIBRARIES"
+    fi
     echo $cc
     eval $cc
     if [[ -n "${TEST_ARGS[$APP]}" ]]; then
