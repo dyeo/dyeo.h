@@ -85,5 +85,23 @@ int main()
     test_expr(mathe("sqrt(4)"), double, 2.0);
     test_expr(mathe("sqrt(9)"), double, 3.0);
     test_expr(mathe("sqrt(16)"), double, 4.0);
+    
+    test_expr(mathe("asin(0.5)"), double, 0.5235987755982989);
+    test_expr(mathe("acos(0.5)"), double, 1.0471975511965979);
+    test_expr(mathe("atan(0.5)"), double, 0.4636476090008061);
+    test_expr(mathe("sinh(0.5)"), double, 0.5210953054937474);
+    test_expr(mathe("cosh(0.5)"), double, 1.1276259652063807);
+    test_expr(mathe("tanh(0.5)"), double, 0.4621171572600098);
+    test_expr(mathe("abs(-0.5)"), double, 0.5);
+    test_expr(mathe("log(0.5)"), double, -0.6931471805599453);
+    test_expr(mathe("log10(0.5)"), double, -0.3010299956639812);
+    test_expr(mathe("exp(0.5)"), double, 1.648721270700128);
+    test_expr(mathe("ceil(0.5)"), double, 1.0);
+    test_expr(mathe("floor(0.5)"), double, 0.0);
+    test_expr(mathe("round(0.5)"), double, 1.0);
+    test_expr(mathe("cbrt(0.5)"), double, 0.7937005259840998);
+    test_expr(mathe("sign(0.5)"), double, 1.0);
+    test_expr(mathe("sign(-0.5)"), double, -1.0);
+    test_expr(mathe("sign(0)"), double, 0.0);
   });
 }

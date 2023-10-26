@@ -86,10 +86,24 @@ const double _me_const_vals[] = {X_CONSTS_LIST 0.0};
 #undef X
 
 #define X_FUNCS_LIST                                                           \
-  X(sin)                                                                       \
-  X(cos)                                                                       \
-  X(tan)                                                                       \
-  X(sqrt)
+  X(sin, sin)                                                                  \
+  X(cos, cos)                                                                  \
+  X(tan, tan)                                                                  \
+  X(sqrt, sqrt)                                                                \
+  X(asin, asin)   /* Arcsine */                                                \
+  X(acos, acos)   /* Arccosine */                                              \
+  X(atan, atan)   /* Arctangent */                                             \
+  X(sinh, sinh)   /* Hyperbolic Sine */                                        \
+  X(cosh, cosh)   /* Hyperbolic Cosine */                                      \
+  X(tanh, tanh)   /* Hyperbolic Tangent */                                     \
+  X(abs, fabs)     /* Absolute Value */                                         \
+  X(log, log)     /* Natural Logarithm (Base e) */                             \
+  X(log10, log10) /* Common Logarithm (Base 10) */                             \
+  X(exp, exp)     /* Exponential (Base e) */                                   \
+  X(ceil, ceil)   /* Smallest integer not less than the argument */            \
+  X(floor, floor) /* Largest integer not greater than the argument */          \
+  X(round, round) /* Round to nearest integer */                               \
+  X(cbrt, cbrt)   /* Cube root */
 
 #define X(V, ...) #V,
 const char *_me_func_names[] = {X_FUNCS_LIST NULL};
@@ -97,7 +111,7 @@ const char *_me_func_names[] = {X_FUNCS_LIST NULL};
 #define X(V, ...) sizeof(#V),
 const size_t _me_func_namelens[] = {X_FUNCS_LIST 0};
 #undef X
-#define X(V, ...) V,
+#define X(V, P, ...) P,
 REAL (*const _me_func_ptrs[])(REAL) = {X_FUNCS_LIST NULL};
 #undef X
 
