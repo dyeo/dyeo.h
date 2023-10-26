@@ -65,6 +65,42 @@ extern REAL mathe(const char *expression);
   X(add)                                                                       \
   X(sub)
 
+#define X_CONSTS_LIST                                                          \
+  X(pi, 3.141592653589793)                                                     \
+  X(e, 2.718281828459045)                                                      \
+  X(phi, 1.618033988749895)                                                    \
+  X(sqrt2, 1.4142135623730951)                                                 \
+  X(ln2, 0.6931471805599453)                                                   \
+  X(log2e, 1.4426950408889634)                                                 \
+  X(log10e, 0.4342944819032518)                                                \
+  X(gamma, 0.5772156649015329)
+
+#define X(V, ...) #V,
+const char *_me_const_names[] = {X_CONSTS_LIST NULL};
+#undef X
+#define X(V, ...) sizeof(#V),
+const size_t _me_const_namelens[] = {X_CONSTS_LIST 0};
+#undef X
+#define X(_, V, ...) V,
+const double _me_const_vals[] = {X_CONSTS_LIST 0.0};
+#undef X
+
+#define X_FUNCS_LIST                                                           \
+  X(sin)                                                                       \
+  X(cos)                                                                       \
+  X(tan)                                                                       \
+  X(sqrt)
+
+#define X(V, ...) #V,
+const char *_me_func_names[] = {X_FUNCS_LIST NULL};
+#undef X
+#define X(V, ...) sizeof(#V),
+const size_t _me_func_namelens[] = {X_FUNCS_LIST 0};
+#undef X
+#define X(V, ...) V,
+REAL (*const _me_func_ptrs[])(REAL) = {X_FUNCS_LIST NULL};
+#undef X
+
 #define X(V) me_##V,
 typedef enum _me_op
 {
@@ -140,8 +176,8 @@ typedef struct _me_tok
     i += LEN;                                                                  \
   } while (0)
 
-#define streq(StrA, StrB, StrN)                                             \
-  (StrN == strlen(StrB) && !memcmp(StrA, StrB, StrN))
+#define streq(StrA, StrB, StrAN)                                               \
+  (StrAN == strlen(StrB) && !memcmp(StrA, StrB, StrAN))
 
 _me_tok *_me_tokenize(const char *expr, size_t *toklen)
 {
@@ -166,65 +202,21 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen)
       {
         tlen += 1;
       }
-      if (streq(token, "pi", tlen))
+      for (int c = 0; _me_const_names[c] != NULL; ++c)
       {
-        PUSH_VAL(3.141592653589793, tlen);
-        continue;
+        if (streq(token, _me_const_names[c], tlen))
+        {
+          PUSH_VAL(_me_const_vals[c], tlen);
+          continue;
+        }
       }
-      if (streq(token, "e", tlen))
+      for (int c = 0; _me_func_names[c] != NULL; ++c)
       {
-        PUSH_VAL(2.718281828459045, tlen);
-        continue;
-      }
-      if (streq(token, "phi", tlen))
-      {
-        PUSH_VAL(1.618033988749895, tlen);
-        continue;
-      }
-      if (streq(token, "sqrt2", tlen))
-      {
-        PUSH_VAL(1.4142135623730951, tlen);
-        continue;
-      }
-      if (streq(token, "ln2", tlen))
-      {
-        PUSH_VAL(0.6931471805599453, tlen);
-        continue;
-      }
-      if (streq(token, "log2e", tlen))
-      {
-        PUSH_VAL(1.4426950408889634, tlen);
-        continue;
-      }
-      if (streq(token, "log10e", tlen))
-      {
-        PUSH_VAL(0.4342944819032518, tlen);
-        continue;
-      }
-      if (streq(token, "gamma", tlen))
-      {
-        PUSH_VAL(0.5772156649015329, tlen);
-        continue;
-      }
-      if (streq(token, "sin", tlen))
-      {
-        PUSH_FUN(sin, tlen);
-        continue;
-      }
-      if (streq(token, "cos", tlen))
-      {
-        PUSH_FUN(cos, tlen);
-        continue;
-      }
-      if (streq(token, "tan", tlen))
-      {
-        PUSH_FUN(tan, tlen);
-        continue;
-      }
-      if (streq(token, "sqrt", tlen))
-      {
-        PUSH_FUN(sqrt, tlen);
-        continue;
+        if (streq(token, _me_func_names[c], tlen))
+        {
+          PUSH_FUN(_me_func_ptrs[c], tlen);
+          continue;
+        }
       }
     }
     if (!tok.isop)
