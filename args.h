@@ -52,6 +52,15 @@ extern "C" {
 #define ARGS_PATHSEP '/'
 #endif
 
+#ifndef CONCAT
+#define CONCAT(X, Y) _CONCAT(X, Y)
+#define _CONCAT(X, Y) X##Y
+#endif
+#ifndef STR
+#define STR(X) _STR(X)
+#define _STR(X) #X
+#endif
+
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -81,11 +90,11 @@ typedef char *string;
 typedef char *filepath;
 typedef char *dirpath;
 
-#ifndef ARGTYPES_X_LIST_CUSTOM
-#define ARGTYPES_X_LIST_CUSTOM
+#ifndef X_LIST_ARGTYPES_CUSTOM
+#define X_LIST_ARGTYPES_CUSTOM
 #endif
 
-#define ARGTYPES_X_LIST                                                        \
+#define X_LIST_ARGTYPES                                                        \
   X(bool)                                                                      \
   X(char)                                                                      \
   X(short)                                                                     \
@@ -96,7 +105,7 @@ typedef char *dirpath;
   X(string)                                                                    \
   X(filepath)                                                                  \
   X(dirpath)                                                                   \
-  ARGTYPES_X_LIST_CUSTOM
+  X_LIST_ARGTYPES_CUSTOM
 
 #define _ARGFMT(TYPE) _##TYPE##_fmt
 #define _bool_fmt "%x"
@@ -110,23 +119,38 @@ typedef char *dirpath;
 #define _filepath_fmt "%s"
 #define _dirpath_fmt "%s"
 
-#define _ARGTYPE(TYPE) _##TYPE##_type
-typedef enum argtype_t
+typedef bool *bool_arr;
+typedef char *char_arr;
+typedef short *short_arr;
+typedef int *int_arr;
+typedef long *long_arr;
+typedef float *float_arr;
+typedef double *double_arr;
+typedef string *string_arr;
+typedef filepath *filepath_arr;
+typedef dirpath *dirpath_arr;
+
+#define argarr(T) CONCAT(T, _arr)
+
+#define _argtype(T) _##T##_type
+#define _argarrtype(T) _argtype(T##_arr)
+
+typedef enum _argtype_t
 {
-#define X(TYPE) _ARGTYPE(TYPE),
-  ARGTYPES_X_LIST
+#define X(TYPE) _argtype(TYPE), _argarrtype(TYPE),
+  X_LIST_ARGTYPES
 #undef X
-} argtype_t;
+} _argtype_t;
 
 const char *_argtype_names[] = {
-#define X(TYPE) #TYPE,
-  ARGTYPES_X_LIST
+#define X(TYPE) #TYPE, STR(TYPE##_arr),
+  X_LIST_ARGTYPES
 #undef X
 };
 
 const int _argtype_sizes[] = {
-#define X(TYPE) sizeof(TYPE),
-  ARGTYPES_X_LIST
+#define X(TYPE) sizeof(TYPE), sizeof(TYPE *),
+  X_LIST_ARGTYPES
 #undef X
 };
 
@@ -135,9 +159,10 @@ const int _argtype_sizes[] = {
 typedef struct arg_t
 {
   const char *name;
-  argtype_t type;
+  _argtype_t type;
   const char *message;
   void *value;
+  size_t vlen, vcap; // used for arrays
   void *defaultValue;
   bool isUsed;
   bool isFlag;
@@ -169,30 +194,38 @@ typedef struct args_t
                  0, 0)
 
 #define args_arg(args_t, NAME, TYPE, ...)                                      \
-  ((TYPE *) _args_common(args_t, #NAME, _ARGTYPE(TYPE), false, false,          \
+  ((TYPE *) _args_common(args_t, #NAME, _argtype(TYPE), false, false,          \
                          __VA_ARGS__))
 
 #define args_flag(args_t, NAME, ...)                                           \
   ((bool *) _args_common(args_t, #NAME, _bool_type, true, false, __VA_ARGS__))
 
 #define args_pop(args_t, NAME, TYPE, ...)                                      \
-  ((TYPE *) _args_common(args_t, #NAME, _ARGTYPE(TYPE), false, true,           \
+  ((TYPE *) _args_common(args_t, #NAME, _argtype(TYPE), false, true,           \
                          __VA_ARGS__))
 
 extern args_t _args_new_impl();
 
-extern void *_args_arg_impl(args_t args, const char *name, argtype_t type,
+extern void *_args_arg_impl(args_t args, const char *name, _argtype_t type,
                             bool isFlag, bool isPopped, int _, ...);
 
-extern bool _args_get_bool(char *value);
-extern char _args_get_char(char *value);
-extern short _args_get_short(char *value);
-extern int _args_get_int(char *value);
-extern long _args_get_long(char *value);
-extern float _args_get_float(char *value);
-extern double _args_get_double(char *value);
-extern string _args_get_str(char *value);
-extern bool _args_set_value(arg_t *arg, char *value);
+extern bool _args_get_bool(arg_t *a, char *value);
+extern char _args_get_char(arg_t *a, char *value);
+extern short _args_get_short(arg_t *a, char *value);
+extern int _args_get_int(arg_t *a, char *value);
+extern long _args_get_long(arg_t *a, char *value);
+extern float _args_get_float(arg_t *a, char *value);
+extern double _args_get_double(arg_t *a, char *value);
+extern string _args_get_string(arg_t *a, char *value);
+extern bool **_args_get_bool_arr(arg_t *a, char *value);
+extern char **_args_get_char_arr(arg_t *a, char *value);
+extern short **_args_get_short_arr(arg_t *a, char *value);
+extern int **_args_get_int_arr(arg_t *a, char *value);
+extern long **_args_get_long_arr(arg_t *a, char *value);
+extern float **_args_get_float_arr(arg_t *a, char *value);
+extern double **_args_get_double_arr(arg_t *a, char *value);
+extern string **_args_get_string_arr(arg_t *a, char *value);
+extern bool _args_set_value(arg_t *a, char *value);
 
 extern void args_help(FILE *const stream, args_t args);
 extern void _args_parse(args_t args, int argc, char **argv);
@@ -217,8 +250,8 @@ args_t _args_new_impl()
   return args;
 }
 
-void *_args_arg_impl(args_t args, const char *name, argtype_t type, bool isFlag,
-                     bool isPopped, int _, ...)
+void *_args_arg_impl(args_t args, const char *name, _argtype_t type,
+                     bool isFlag, bool isPopped, int _, ...)
 {
   va_list varg;
   va_start(varg, _);
@@ -231,16 +264,25 @@ void *_args_arg_impl(args_t args, const char *name, argtype_t type, bool isFlag,
     fprintf(stderr, "ERROR: Invalid argument name '%s'\n", name);
     exit(1);
   }
-  int tlen = _argtype_sizes[type];
-  args->args[args->argc] =
-    (arg_t){name,  type,   message,    malloc(tlen),      (void *) defaultValue,
-            false, isFlag, isRequired, strlen(name) == 1, isPopped};
+  int tlen                                  = _argtype_sizes[type];
+  args->args[args->argc]                    = (arg_t){name,
+                                                      type,
+                                                      message,
+                                                      malloc(tlen),
+                                                      0,
+                                                      0,
+                                                      (void *) defaultValue,
+                                                      false,
+                                                      isFlag,
+                                                      isRequired,
+                                                      strlen(name) == 1,
+                                                      isPopped};
   *((void **) args->args[args->argc].value) = (void *) defaultValue;
   args->argc += 1;
   return args->args[args->argc - 1].value;
 };
 
-bool _args_get_bool(char *value)
+bool _args_get_bool(arg_t *a, char *value)
 {
   if (!value)
   {
@@ -256,42 +298,42 @@ bool _args_get_bool(char *value)
          strcmp(value, "ok") == 0;
 }
 
-char _args_get_char(char *value)
+char _args_get_char(arg_t *a, char *value)
 {
   return value ? value[0] : 0;
 }
 
-short _args_get_short(char *value)
+short _args_get_short(arg_t *a, char *value)
 {
   return (short) atoi(value);
 }
 
-int _args_get_int(char *value)
+int _args_get_int(arg_t *a, char *value)
 {
   return atoi(value);
 }
 
-long _args_get_long(char *value)
+long _args_get_long(arg_t *a, char *value)
 {
   return atol(value);
 }
 
-float _args_get_float(char *value)
+float _args_get_float(arg_t *a, char *value)
 {
   return (float) atof(value);
 }
 
-double _args_get_double(char *value)
+double _args_get_double(arg_t *a, char *value)
 {
   return atof(value);
 }
 
-string _args_get_string(char *value)
+string _args_get_string(arg_t *a, char *value)
 {
   return value;
 }
 
-filepath _args_get_filepath(char *value)
+filepath _args_get_filepath(arg_t *a, char *value)
 {
   struct stat buffer;
   if (stat(value, &buffer) != 0 || (buffer.st_mode & S_IFMT) != S_IFREG)
@@ -302,7 +344,7 @@ filepath _args_get_filepath(char *value)
   return strdup(value); // Return a copy of the string
 }
 
-dirpath _args_get_dirpath(char *value)
+dirpath _args_get_dirpath(arg_t *a, char *value)
 {
   struct stat buffer;
   if (stat(value, &buffer) != 0 || (buffer.st_mode & S_IFMT) != S_IFDIR)
@@ -311,6 +353,87 @@ dirpath _args_get_dirpath(char *value)
     exit(1);
   }
   return strdup(value); // Return a copy of the string
+}
+
+#define _args_get_arr_val(TYPE, a, value)                                      \
+  do                                                                           \
+  {                                                                            \
+    if (a->vlen + 1 >= a->vcap)                                                \
+    {                                                                          \
+      if (a->vcap == 0)                                                        \
+      {                                                                        \
+        a->vcap  = 2;                                                          \
+        a->value = malloc(a->vcap * sizeof(TYPE *));                           \
+      }                                                                        \
+      else                                                                     \
+      {                                                                        \
+        a->vcap *= 2;                                                          \
+        a->value = realloc(a->value, a->vcap * sizeof(TYPE *));                \
+      }                                                                        \
+    }                                                                          \
+    ((TYPE **) a->value)[a->vlen]  = malloc(sizeof(TYPE));                     \
+    *((TYPE **) a->value)[a->vlen] = _args_get_##TYPE(a, value);               \
+    a->vlen++;                                                                 \
+  } while (0)
+
+bool **_args_get_bool_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(bool, a, value);
+  return (bool **) a->value;
+}
+
+char **_args_get_char_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(char, a, value);
+  return (char **) a->value;
+}
+
+short **_args_get_short_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(short, a, value);
+  return (short **) a->value;
+}
+
+int **_args_get_int_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(int, a, value);
+  return (int **) a->value;
+}
+
+long **_args_get_long_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(long, a, value);
+  return (long **) a->value;
+}
+
+float **_args_get_float_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(float, a, value);
+  return (float **) a->value;
+}
+
+double **_args_get_double_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(double, a, value);
+  return (double **) a->value;
+}
+
+string **_args_get_string_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(string, a, value);
+  return (string **) a->value;
+}
+
+filepath **_args_get_filepath_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(filepath, a, value);
+  return (filepath **) a->value;
+}
+
+dirpath **_args_get_dirpath_arr(arg_t *a, char *value)
+{
+  _args_get_arr_val(dirpath, a, value);
+  return (dirpath **) a->value;
 }
 
 bool _args_set_value(arg_t *a, char *xval)
@@ -323,12 +446,17 @@ bool _args_set_value(arg_t *a, char *xval)
       return false;
     }
 #define X(TYPE)                                                                \
-  case _ARGTYPE(TYPE):                                                         \
+  case _argtype(TYPE):                                                         \
   {                                                                            \
-    *((TYPE *) a->value) = _args_get_##TYPE(xval);                             \
+    *((TYPE *) a->value) = _args_get_##TYPE(a, xval);                          \
+    return true;                                                               \
+  }                                                                            \
+  case _argarrtype(TYPE):                                                      \
+  {                                                                            \
+    a->value = _args_get_##TYPE##_arr(a, xval);                                \
     return true;                                                               \
   }
-      ARGTYPES_X_LIST
+      X_LIST_ARGTYPES
 #undef X
   }
 }
@@ -353,15 +481,17 @@ void _arg_help(FILE *const s, arg_t a)
     fprintf(s, ": %s", a.message);
     switch (a.type)
     {
+      default:
+        break;
 #define X(TYPE)                                                                \
-  case _ARGTYPE(TYPE):                                                         \
+  case _argtype(TYPE):                                                         \
     if (a.defaultValue != 0)                                                   \
     {                                                                          \
       printf(" (default: "_ARGFMT(TYPE) ")",                                   \
              ((TYPE) ((uintptr_t) a.defaultValue)));                           \
     }                                                                          \
     break;
-      ARGTYPES_X_LIST
+        X_LIST_ARGTYPES
     }
   }
   fprintf(s, "\n");

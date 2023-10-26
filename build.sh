@@ -20,7 +20,7 @@ cp -r ../res res
 
 declare -A BUILD_ARGS
 declare -A TEST_ARGS
-TEST_ARGS["args"]="-something2=1 -a -c args.exe"
+TEST_ARGS["args"]="-a 1 -a 2 -a 3 -a 4 -a 5"
 BUILD_ARGS["gm"]="-lm"
 BUILD_ARGS["wav"]="-lm"
 if [[ $OS == win32 ]]; then
