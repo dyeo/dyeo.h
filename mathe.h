@@ -69,6 +69,15 @@ extern int _mathe_main(int argc, char **argv);
 #define MATHE_PRECISION double
 #endif
 
+#define CONCAT(X, Y) _CONCAT(X, Y)
+#define _CONCAT(X, Y) X##Y
+
+#define float_SUFFIX f
+#define double_SUFFIX
+
+#define _SUFFIX CONCAT(MATHE_PRECISION, _SUFFIX)
+#define FPTR(F) CONCAT(F, _SUFFIX)
+
 #ifdef MATHE_RELEASE
 #define _mathe_main main
 #else
@@ -122,24 +131,24 @@ const double _me_const_vals[] = {X_CONSTS_LIST 0.0};
 #undef X
 
 #define X_FUNCS_LIST                                                           \
-  X(sin, sin)                                                                  \
-  X(cos, cos)                                                                  \
-  X(tan, tan)                                                                  \
-  X(sqrt, sqrt)                                                                \
-  X(asin, asin)   /* Arcsine */                                                \
-  X(acos, acos)   /* Arccosine */                                              \
-  X(atan, atan)   /* Arctangent */                                             \
-  X(sinh, sinh)   /* Hyperbolic Sine */                                        \
-  X(cosh, cosh)   /* Hyperbolic Cosine */                                      \
-  X(tanh, tanh)   /* Hyperbolic Tangent */                                     \
-  X(abs, fabs)    /* Absolute Value */                                         \
-  X(log, log)     /* Natural Logarithm (Base e) */                             \
-  X(log10, log10) /* Common Logarithm (Base 10) */                             \
-  X(exp, exp)     /* Exponential (Base e) */                                   \
-  X(ceil, ceil)   /* Smallest integer not less than the argument */            \
-  X(floor, floor) /* Largest integer not greater than the argument */          \
-  X(round, round) /* Round to nearest integer */                               \
-  X(cbrt, cbrt)   /* Cube root */                                              \
+  X(sin, FPTR(sin))                                                            \
+  X(cos, FPTR(cos))                                                            \
+  X(tan, FPTR(tan))                                                            \
+  X(sqrt, FPTR(sqrt))                                                          \
+  X(asin, FPTR(asin))   /* Arcsine */                                          \
+  X(acos, FPTR(acos))   /* Arccosine */                                        \
+  X(atan, FPTR(atan))   /* Arctangent */                                       \
+  X(sinh, FPTR(sinh))   /* Hyperbolic Sine */                                  \
+  X(cosh, FPTR(cosh))   /* Hyperbolic Cosine */                                \
+  X(tanh, FPTR(tanh))   /* Hyperbolic Tangent */                               \
+  X(abs, FPTR(fabs))    /* Absolute Value */                                   \
+  X(log, FPTR(log))     /* Natural Logarithm (Base e) */                       \
+  X(log10, FPTR(log10)) /* Common Logarithm (Base 10) */                       \
+  X(exp, FPTR(exp))     /* Exponential (Base e) */                             \
+  X(ceil, FPTR(ceil))   /* Smallest integer not less than the argument */      \
+  X(floor, FPTR(floor)) /* Largest integer not greater than the argument */    \
+  X(round, FPTR(round)) /* Round to nearest integer */                         \
+  X(cbrt, FPTR(cbrt))   /* Cube root */                                        \
   X(sign, fsign)
 
 #define X(V, ...) #V,
@@ -266,7 +275,7 @@ void _me_print_toks(_me_tok *tokens, size_t count)
     }
     else
     {
-      _me_log("%f ", tokens[i].val);
+      _me_log("%f ", (float) tokens[i].val);
     }
   }
   _me_log("\n"); // Newline at the end
@@ -571,7 +580,7 @@ int _mathe_main(int argc, char *argv[])
     strcat(expr, argv[i]);
   }
   double result = mathe_eval(expr);
-  printf("%f\n", result);
+  printf("%f\n", (float) result);
   free(expr);
   return 0;
 }

@@ -1,4 +1,3 @@
-#define MATHE_PRECISION double
 #define MATHE_IMPLEMENTATION
 #define MATHE_DEBUG
 #include "../mathe.h"
