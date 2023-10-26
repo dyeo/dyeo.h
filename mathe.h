@@ -140,7 +140,7 @@ typedef struct _me_tok
     i += LEN;                                                                  \
   } while (0)
 
-#define _strncmp(StrA, StrB, StrN)                                             \
+#define streq(StrA, StrB, StrN)                                             \
   (StrN == strlen(StrB) && !memcmp(StrA, StrB, StrN))
 
 _me_tok *_me_tokenize(const char *expr, size_t *toklen)
@@ -166,62 +166,62 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen)
       {
         tlen += 1;
       }
-      if (_strncmp(token, "pi", tlen))
+      if (streq(token, "pi", tlen))
       {
         PUSH_VAL(3.141592653589793, tlen);
         continue;
       }
-      if (_strncmp(token, "e", tlen))
+      if (streq(token, "e", tlen))
       {
         PUSH_VAL(2.718281828459045, tlen);
         continue;
       }
-      if (_strncmp(token, "phi", tlen))
+      if (streq(token, "phi", tlen))
       {
         PUSH_VAL(1.618033988749895, tlen);
         continue;
       }
-      if (_strncmp(token, "sqrt2", tlen))
+      if (streq(token, "sqrt2", tlen))
       {
         PUSH_VAL(1.4142135623730951, tlen);
         continue;
       }
-      if (_strncmp(token, "ln2", tlen))
+      if (streq(token, "ln2", tlen))
       {
         PUSH_VAL(0.6931471805599453, tlen);
         continue;
       }
-      if (_strncmp(token, "log2e", tlen))
+      if (streq(token, "log2e", tlen))
       {
         PUSH_VAL(1.4426950408889634, tlen);
         continue;
       }
-      if (_strncmp(token, "log10e", tlen))
+      if (streq(token, "log10e", tlen))
       {
         PUSH_VAL(0.4342944819032518, tlen);
         continue;
       }
-      if (_strncmp(token, "gamma", tlen))
+      if (streq(token, "gamma", tlen))
       {
         PUSH_VAL(0.5772156649015329, tlen);
         continue;
       }
-      if (_strncmp(token, "sin", tlen))
+      if (streq(token, "sin", tlen))
       {
         PUSH_FUN(sin, tlen);
         continue;
       }
-      if (_strncmp(token, "cos", tlen))
+      if (streq(token, "cos", tlen))
       {
         PUSH_FUN(cos, tlen);
         continue;
       }
-      if (_strncmp(token, "tan", tlen))
+      if (streq(token, "tan", tlen))
       {
         PUSH_FUN(tan, tlen);
         continue;
       }
-      if (_strncmp(token, "sqrt", tlen))
+      if (streq(token, "sqrt", tlen))
       {
         PUSH_FUN(sqrt, tlen);
         continue;
