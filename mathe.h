@@ -301,7 +301,7 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen, size_t varsn,
         if (streq(token, _me_func_names[f], tlen))
         {
           PUSH_FUN(_me_func_ptrs[f], tlen);
-          break;
+          goto done;
         }
       }
       for (int c = 0; _me_const_names[c] != NULL; ++c)
@@ -309,7 +309,7 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen, size_t varsn,
         if (streq(token, _me_const_names[c], tlen))
         {
           PUSH_VAL(_me_const_vals[c], tlen);
-          break;
+          goto done;
         }
       }
       for (int v = 0; v < varsn; ++v)
@@ -317,9 +317,10 @@ _me_tok *_me_tokenize(const char *expr, size_t *toklen, size_t varsn,
         if (streq(token, vars[v].token, tlen))
         {
           PUSH_VAL(vars[v].val, tlen);
-          break;
+          goto done;
         }
       }
+    done:
       continue;
     }
     if (!tok.isop)
