@@ -1130,7 +1130,7 @@ void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
   _wav_win32_h_header =
     GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, sizeof(WAVEHDR));
   char *playData = _wav_deinterleave(data, channels, sampleCount, bitDepth);
-  _wav_win32_header.lpData = playData;
+  _wav_win32_header.lpData         = playData;
   _wav_win32_header.dwBufferLength = bufferLength;
   waveOutPrepareHeader(_wav_win32_h_wav_out, &_wav_win32_header,
                        sizeof(WAVEHDR));
@@ -1144,10 +1144,16 @@ static snd_pcm_uframes_t _wav_linux_frames;
 static char *_wav_linux_playbuf;
 
 void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
-                   uint32_t sampleCount, uint16_t bitDepth, char *data)
+                   uint32_t sampleCount, uint16_t bitDepth, char **data)
 {
   int err;
   snd_pcm_hw_params_t *params;
+  char **data_pointers = (char **) malloc(channels * sizeof(char *));
+  for (int i = 0; i < channels; i++)
+  {
+    data_pointers[i] = data[i];
+  }
+
   if ((err = snd_pcm_open(&_wav_linux_pcm_handle, "default",
                           SND_PCM_STREAM_PLAYBACK, 0)) < 0)
   {
@@ -1156,6 +1162,8 @@ void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
   }
   snd_pcm_hw_params_alloca(&params);
   snd_pcm_hw_params_any(_wav_linux_pcm_handle, params);
+  snd_pcm_hw_params_set_access(_wav_linux_pcm_handle, params,
+                               SND_PCM_ACCESS_RW_NONINTERLEAVED);
   if (format == wav_float)
   {
     snd_pcm_hw_params_set_format(_wav_linux_pcm_handle, params,
@@ -1175,32 +1183,32 @@ void _wav_play_pcm(uint16_t format, uint16_t channels, uint32_t sampleRate,
     }
   }
   snd_pcm_hw_params_set_channels(_wav_linux_pcm_handle, params, channels);
-  unsigned int sampleRate = sampleRate;
   snd_pcm_hw_params_set_rate_near(_wav_linux_pcm_handle, params, &sampleRate,
                                   NULL);
   snd_pcm_hw_params(_wav_linux_pcm_handle, params);
   snd_pcm_hw_params_get_period_size(params, &_wav_linux_frames, NULL);
-  _wav_linux_playbuf = (char *) malloc(_wav_linux_frames * 2);
   while (sampleCount > 0)
   {
-    int framesToWrite = sampleCount / (bitDepth / 8);
+    int framesToWrite = sampleCount / channels / (bitDepth / 8);
     if (framesToWrite > _wav_linux_frames)
     {
     framesToWrite = _wav_linux_frames;
     }
-    memcpy(_wav_linux_playbuf, data, framesToWrite * (bitDepth / 8));
-    data += framesToWrite * (bitDepth / 8);
-    sampleCount -= framesToWrite * (bitDepth / 8);
-    err =
-      snd_pcm_writei(_wav_linux_pcm_handle, _wav_linux_playbuf, framesToWrite);
+    err = snd_pcm_writei(_wav_linux_pcm_handle, (void **) data_pointers,
+                         framesToWrite);
     if (err == -EPIPE)
     {
     snd_pcm_prepare(_wav_linux_pcm_handle);
     }
+    for (int i = 0; i < channels; i++)
+    {
+    data_pointers[i] += framesToWrite * (bitDepth / 8);
+    }
+    sampleCount -= framesToWrite * channels * (bitDepth / 8);
   }
   snd_pcm_drain(_wav_linux_pcm_handle);
   snd_pcm_close(_wav_linux_pcm_handle);
-  free(_wav_linux_playbuf);
+  free(data_pointers);
 }
 
 #endif
