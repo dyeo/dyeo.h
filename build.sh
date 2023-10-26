@@ -22,12 +22,12 @@ declare -A BUILD_ARGS
 declare -A TEST_ARGS
 TEST_ARGS["args"]="-something2=1 -a -c args.exe"
 BUILD_ARGS["gm"]="-lm"
-BUILD_ARGS["mathe"]="-lm"
 BUILD_ARGS["wav"]="-lm"
 if [[ $OS == win32 ]]; then
     BUILD_ARGS["wav"]="-lwinmm"
     BUILD_ARGS["udp"]="-lws2_32"
 else
+    BUILD_ARGS["mathe"]="-lm"
     BUILD_ARGS["wav"]="-lasound"
     BUILD_ARGS["udp"]="-lnsl -lresolv"
 fi
