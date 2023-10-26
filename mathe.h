@@ -15,6 +15,11 @@ extern "C" {
 
 // -----------------------------------------------------------------------------
 
+REAL fsign(const REAL v)
+{
+  return (0 < v) - (v < 0);
+}
+
 extern REAL mathe(const char *expression);
 
 // -----------------------------------------------------------------------------
@@ -96,14 +101,15 @@ const double _me_const_vals[] = {X_CONSTS_LIST 0.0};
   X(sinh, sinh)   /* Hyperbolic Sine */                                        \
   X(cosh, cosh)   /* Hyperbolic Cosine */                                      \
   X(tanh, tanh)   /* Hyperbolic Tangent */                                     \
-  X(abs, fabs)     /* Absolute Value */                                         \
+  X(abs, fabs)    /* Absolute Value */                                         \
   X(log, log)     /* Natural Logarithm (Base e) */                             \
   X(log10, log10) /* Common Logarithm (Base 10) */                             \
   X(exp, exp)     /* Exponential (Base e) */                                   \
   X(ceil, ceil)   /* Smallest integer not less than the argument */            \
   X(floor, floor) /* Largest integer not greater than the argument */          \
   X(round, round) /* Round to nearest integer */                               \
-  X(cbrt, cbrt)   /* Cube root */
+  X(cbrt, cbrt)   /* Cube root */                                              \
+  X(sign, fsign)
 
 #define X(V, ...) #V,
 const char *_me_func_names[] = {X_FUNCS_LIST NULL};
