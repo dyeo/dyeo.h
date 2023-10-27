@@ -41,7 +41,7 @@ char *strndup(const char *s, size_t n)
   return (char *) memcpy(new, s, len);
 }
 
-bool ischrcls(char c, const char *cls)
+bool _ischrcls(char c, const char *cls)
 {
   while (*cls)
   {
@@ -54,11 +54,11 @@ bool ischrcls(char c, const char *cls)
   return false;
 }
 
-size_t chrclslen(const char *s, const char *cls)
+size_t _chrclslen(const char *s, const char *cls)
 {
   size_t count = 0;
 
-  while (*s && ischrcls(*s, cls))
+  while (*s && _ischrcls(*s, cls))
   {
     count++;
     s++;
@@ -67,7 +67,7 @@ size_t chrclslen(const char *s, const char *cls)
   return count;
 }
 
-const char *next_token(const char *s, size_t *start, size_t *len)
+const char *_dc_next_tok(const char *s, size_t *start, size_t *len)
 {
   size_t i = 0;
   *len     = 0;
@@ -180,11 +180,11 @@ const char *next_token(const char *s, size_t *start, size_t *len)
       *len = i - *start;
       return s + i;
     }
-    else if (ischrcls(s[i], _op_chars))
+    else if (_ischrcls(s[i], _op_chars))
     {
       *start = i;
       *len   = 1;
-      while (ischrcls(s[i], _op_chars))
+      while (_ischrcls(s[i], _op_chars))
       {
         i++;
       }
@@ -218,18 +218,18 @@ typedef enum
   TT_COMMA,
   TT_SEMICOLON,
   TT_UNKNOWN // Unknown token type, this will help handle unexpected cases
-} token_type_t;
+} dc_toktype;
 
 typedef struct
 {
-  token_type_t type;
+  dc_toktype type;
   char *value;
   size_t line, col;
-} token_t;
+} dc_tok;
 
-token_t **tokenize(const char *s)
+dc_tok **dc_tokenize(const char *s)
 {
-  token_t **tokens = NULL;
+  dc_tok **tokens = NULL;
 
   size_t start;
   size_t len;
@@ -237,10 +237,10 @@ token_t **tokenize(const char *s)
   size_t line = 1, col = 1;
   while (s && *s)
   {
-    const char *next = next_token(s, &start, &len);
+    const char *next = _dc_next_tok(s, &start, &len);
     if (len)
     {
-      token_t *token = (token_t *) malloc(sizeof(token_t));
+      dc_tok *token = (dc_tok *) malloc(sizeof(dc_tok));
 
       token->value = strndup(s + start, len);
       token->line  = line;
@@ -281,7 +281,7 @@ token_t **tokenize(const char *s)
                (s[start] == '-' &&
                 (isdigit(s[start + 1]) || s[start + 1] == '.')))
         token->type = TT_NUMBER;
-      else if (ischrcls(s[start], _op_chars))
+      else if (_ischrcls(s[start], _op_chars))
         token->type = TT_OPERATOR;
       else if (s[start] == '(')
         token->type = TT_LPAREN;
@@ -375,7 +375,7 @@ const char *test =
   
 int main(void)
 {
-  token_t **tokens = tokenize(test);
+  dc_tok **tokens = dc_tokenize(test);
   for (int i = 0; i < dt_arrlenu(tokens); ++i)
   {
     printf("%llu:%llu\t%s     \t%s\n", tokens[i]->line, tokens[i]->col,
