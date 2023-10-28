@@ -10,9 +10,6 @@
 #ifndef _CRT_SECURE_NO_WARNINGS
 #define _CRT_SECURE_NO_WARNINGS
 #endif
-#ifndef strdup
-#define strdup _strdup_s
-#endif
 #endif
 
 #include <ctype.h>
@@ -40,6 +37,7 @@ typedef uint64_t u64;
 typedef int64_t i64;
 typedef char *string;
 
+#if defined(_WIN32) || defined(_MSC_VER)
 static inline char *_strdup_s(const char *s) {
   if (!s)
     return NULL;
@@ -51,6 +49,10 @@ static inline char *_strdup_s(const char *s) {
   p[len] = '\0';
   return p;
 }
+#ifndef strdup
+#define strdup _strdup_s
+#endif
+#endif
 
 #endif
 /*
