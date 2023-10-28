@@ -2,4 +2,5 @@
 [Oo]ut/
 [Oo]utput/
 *.*.ignore
+*.ignore.*
 *.exe
