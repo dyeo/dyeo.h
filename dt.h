@@ -564,10 +564,10 @@ extern char *dt_dumps_raw_string(const char *string,
                                  const dt_dumps_settings_t *set);
 extern void dt_dumpb_raw_string(const char *string, byte *bytes);
 
-extern void dt_loads_space(const char *string, size_t *offset);
-extern void dt_loads_comment(const char *string, size_t *offset);
+extern void _dt_cons_spc(const char *string, size_t *offset);
+extern void _dt_cons_cmt(const char *string, size_t *offset);
 
-extern void dt_consume_token(const char *string, size_t *offset, char token);
+extern void _dt_cons_tok(const char *string, size_t *offset, char token);
 
 // -----------------------------------------------------------------------------
 
@@ -715,6 +715,8 @@ void *dt_arrgrowf(void *a, size_t elemsize, size_t addlen, size_t min_cap)
     min_cap = 4;
   }
 
+  printf("arrgrowf(%p, %llu, %llu, %llu), %llu->%llu\n", a, elemsize, addlen,
+         min_cap, dt_arrcap(a), min_cap);
   b = _dt_realloc((a) ? dt_arrhead(a) : NULL,
                   elemsize * min_cap + sizeof(dt_arrhead_t));
   b = (char *) b + sizeof(dt_arrhead_t);
@@ -1851,13 +1853,13 @@ dt_node *dt_loads_impl(const char *string, size_t *offset)
 {
   dt_assert(string, "String is null", string, *offset);
   dt_test(string[*offset], "Unexpected end of string", string, *offset);
-  dt_loads_comment(string, offset);
+  _dt_cons_cmt(string, offset);
 #define X(NAME, ...)                                                           \
   if (dt_test_##NAME(string, offset))                                          \
   {                                                                            \
-    dt_loads_comment(string, offset);                                          \
+    _dt_cons_cmt(string, offset);                                          \
     dt_node *res = dt_loads_##NAME(string, offset);                            \
-    dt_loads_comment(string, offset);                                          \
+    _dt_cons_cmt(string, offset);                                          \
     return res;                                                                \
   }
   DT_TYPES_LIST
@@ -2046,7 +2048,6 @@ byte *dt_dumpb(const dt_node *node, size_t *len)
     return NULL;
   }
   byte *bytes = NULL;
-  dt_arrsetcap(bytes, 1024);
   dt_arradd(bytes, 'd');
   dt_arradd(bytes, 't');
   dt_arradd(bytes, 0);
@@ -2057,6 +2058,8 @@ byte *dt_dumpb(const dt_node *node, size_t *len)
 
 void dt_dumpb_impl(const dt_node *node, byte *bytes)
 {
+  printf("dumpb(%s, %p), (%llu/%llu)\n", dt_type_names[node->type], bytes,
+         dt_arrlenu(bytes), dt_arrcap(bytes));
   byte type = node->type;
   dt_pushval(byte, bytes, type);
   _dt_dumpb_ptrs[node->type](node, bytes);
@@ -2083,6 +2086,7 @@ void dt_dumpb_raw_string(const char *string, byte *bytes)
   char *escstr = stresc(string);
   size_t slen  = strlen(escstr);
   dt_arrmaygrow(bytes, sizeof(size_t) + slen);
+  printf("dumpb_raw_string(%s, %p), (%llu)\n", escstr, bytes, strlen(escstr));
   dt_pushval(size_t, bytes, slen);
   dt_arraddbytes(bytes, escstr, slen);
   free(escstr);
@@ -2090,7 +2094,7 @@ void dt_dumpb_raw_string(const char *string, byte *bytes)
 
 // -----------------------------------------------------------------------------
 
-void dt_loads_space(const char *string, size_t *offset)
+void _dt_cons_spc(const char *string, size_t *offset)
 {
   if (!string[*offset] || !isspace(string[*offset]))
   {
@@ -2102,9 +2106,9 @@ void dt_loads_space(const char *string, size_t *offset)
   } while (string[*offset] && isspace(string[*offset]));
 }
 
-void dt_loads_comment(const char *string, size_t *offset)
+void _dt_cons_cmt(const char *string, size_t *offset)
 {
-  dt_loads_space(string, offset);
+  _dt_cons_spc(string, offset);
 
   if (!string[*offset])
   {
@@ -2137,16 +2141,16 @@ void dt_loads_comment(const char *string, size_t *offset)
     dt_test(commentEndFound, "Expected token '*/'", string, *offset);
   }
 
-  dt_loads_space(string, offset);
+  _dt_cons_spc(string, offset);
 }
 
-void dt_consume_token(const char *string, size_t *offset, char token)
+void _dt_cons_tok(const char *string, size_t *offset, char token)
 {
-  dt_loads_comment(string, offset);
+  _dt_cons_cmt(string, offset);
   dt_testf(string[*offset] == token, string, *offset, "Expected token '%c'",
            token);
   *offset += 1;
-  dt_loads_comment(string, offset);
+  _dt_cons_cmt(string, offset);
 }
 
 // -----------------------------------------------------------------------------
@@ -2159,11 +2163,11 @@ bool dt_test_null(const char *string, size_t *offset)
 
 dt_node *dt_loads_null(const char *string, size_t *offset)
 {
-  dt_loads_comment(string, offset);
+  _dt_cons_cmt(string, offset);
   const char *next = (string + *offset);
   dt_test(strstr(next, "null") == next, "Expected null", string, *offset);
   *offset += 4;
-  dt_loads_comment(string, offset);
+  _dt_cons_cmt(string, offset);
   return dt_new_null(NULL);
 }
 
@@ -2358,11 +2362,11 @@ bool dt_test_arr(const char *string, size_t *offset)
 
 dt_node *dt_loads_arr(const char *string, size_t *offset)
 {
-  dt_consume_token(string, offset, '[');
+  _dt_cons_tok(string, offset, '[');
   dt_node *res = dt_new_arr(NULL);
   while (string[*offset] && string[*offset] != ']')
   {
-    dt_loads_comment(string, offset);
+    _dt_cons_cmt(string, offset);
     while (string[*offset] == ',')
     {
       *offset += 1;
@@ -2373,10 +2377,10 @@ dt_node *dt_loads_arr(const char *string, size_t *offset)
     {
       *offset += 1;
     }
-    dt_loads_comment(string, offset);
+    _dt_cons_cmt(string, offset);
     dt_test(string[*offset] != '}', "Expected token ']'", string, *offset);
   }
-  dt_consume_token(string, offset, ']');
+  _dt_cons_tok(string, offset, ']');
   return res;
 }
 
@@ -2446,31 +2450,31 @@ bool dt_test_map(const char *string, size_t *offset)
 
 dt_node *dt_loads_map(const char *string, size_t *offset)
 {
-  dt_consume_token(string, offset, '{');
+  _dt_cons_tok(string, offset, '{');
   dt_node *res = dt_new_map(NULL);
   while (string[*offset] && string[*offset] != '}')
   {
-    dt_loads_comment(string, offset);
+    _dt_cons_cmt(string, offset);
     dt_test(string[*offset] != '{', "Expected key", string, *offset);
     dt_test(string[*offset] != '[', "Expected key", string, *offset);
     while (string[*offset] == ',')
     {
       *offset += 1;
     }
-    dt_loads_comment(string, offset);
+    _dt_cons_cmt(string, offset);
     char *key = dt_loads_raw_string(string, offset);
-    dt_loads_comment(string, offset);
-    dt_consume_token(string, offset, ':');
+    _dt_cons_cmt(string, offset);
+    _dt_cons_tok(string, offset, ':');
     dt_node *value = dt_loads_impl(string, offset);
     dt_smpadd(res->map_v, key, value);
     while (string[*offset] == ',')
     {
       *offset += 1;
     }
-    dt_loads_comment(string, offset);
+    _dt_cons_cmt(string, offset);
     dt_test(string[*offset] != ']', "Expected token '}'", string, *offset);
   }
-  dt_consume_token(string, offset, '}');
+  _dt_cons_tok(string, offset, '}');
   return res;
 }
 
@@ -2686,15 +2690,6 @@ char *stresc(const char *s)
 
 char *strnesc(const char *s, size_t len)
 {
-  for (int i = 0; s[i]; i++)
-  {
-    if (isescape(s[i]))
-    {
-      len++;
-    }
-    len++;
-  }
-
   char *result = (char *) _dt_malloc(len + 1);
   if (!result)
   {
