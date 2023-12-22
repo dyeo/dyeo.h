@@ -14,7 +14,8 @@ fi
 
 mkdir -p out
 mkdir -p res
-cp -r res/ out/res/
+rm -rf out/res
+cp -r res out/res
 
 cd out
 
