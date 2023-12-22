@@ -355,84 +355,95 @@ dirpath _args_get_dirpath(arg_t *a, char *value)
   return strdup(value); // Return a copy of the string
 }
 
-#define _args_get_arr_val(TYPE, a, value)                                      \
-  do                                                                           \
+void _args_add_arr_val(arg_t *a, size_t elemsize, char *value)
+{
+  if (a->vlen + 1 >= a->vcap)
+  {
+    if (a->vcap == 0)
+    {
+      a->vcap  = 4;
+      a->value = malloc(a->vcap * elemsize);
+    }
+    else
+    {
+      a->vcap *= 2;
+      a->value = realloc(a->value, a->vcap * elemsize);
+    }
+  }
+
+  switch (a->type)
+  {
+#define X(V)                                                                   \
+  case _argtype(V):                                                            \
+  case _argarrtype(V):                                                         \
   {                                                                            \
-    if (a->vlen + 1 >= a->vcap)                                                \
-    {                                                                          \
-      if (a->vcap == 0)                                                        \
-      {                                                                        \
-        a->vcap  = 2;                                                          \
-        a->value = malloc(a->vcap * sizeof(TYPE *));                           \
-      }                                                                        \
-      else                                                                     \
-      {                                                                        \
-        a->vcap *= 2;                                                          \
-        a->value = realloc(a->value, a->vcap * sizeof(TYPE *));                \
-      }                                                                        \
-    }                                                                          \
-    ((TYPE **) a->value)[a->vlen]  = malloc(sizeof(TYPE));                     \
-    *((TYPE **) a->value)[a->vlen] = _args_get_##TYPE(a, value);               \
+    ((V **) a->value)[a->vlen]  = malloc(elemsize);                            \
+    *((V **) a->value)[a->vlen] = _args_get_##V(a, value);                     \
     a->vlen++;                                                                 \
-  } while (0)
+    break;                                                                     \
+  }
+    X_LIST_ARGTYPES
+#undef X
+  }
+}
 
 bool **_args_get_bool_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(bool, a, value);
+  _args_add_arr_val(a, sizeof(bool), value);
   return (bool **) a->value;
 }
 
 char **_args_get_char_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(char, a, value);
+  _args_add_arr_val(a, sizeof(char), value);
   return (char **) a->value;
 }
 
 short **_args_get_short_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(short, a, value);
+  _args_add_arr_val(a, sizeof(short), value);
   return (short **) a->value;
 }
 
 int **_args_get_int_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(int, a, value);
+  _args_add_arr_val(a, sizeof(int), value);
   return (int **) a->value;
 }
 
 long **_args_get_long_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(long, a, value);
+  _args_add_arr_val(a, sizeof(long), value);
   return (long **) a->value;
 }
 
 float **_args_get_float_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(float, a, value);
+  _args_add_arr_val(a, sizeof(float), value);
   return (float **) a->value;
 }
 
 double **_args_get_double_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(double, a, value);
+  _args_add_arr_val(a, sizeof(double), value);
   return (double **) a->value;
 }
 
 string **_args_get_string_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(string, a, value);
+  _args_add_arr_val(a, sizeof(string), value);
   return (string **) a->value;
 }
 
 filepath **_args_get_filepath_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(filepath, a, value);
+  _args_add_arr_val(a, sizeof(filepath), value);
   return (filepath **) a->value;
 }
 
 dirpath **_args_get_dirpath_arr(arg_t *a, char *value)
 {
-  _args_get_arr_val(dirpath, a, value);
+  _args_add_arr_val(a, sizeof(dirpath), value);
   return (dirpath **) a->value;
 }
 
@@ -493,6 +504,7 @@ void _arg_help(FILE *const s, arg_t a)
     break;
         X_LIST_ARGTYPES
     }
+#undef X
   }
   fprintf(s, "\n");
 }

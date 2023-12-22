@@ -7,7 +7,7 @@ const char *s[] = {YEARGS(A, B, C, D, E, F)};
 #undef Y
 
 #define _fprintf_arg0 stdout
-#define _fprintf_arg1 "no args\n"
+#define _fprintf_arg1 "\n"
 #define fprintf(...) CALLFUNCD(fprintf, 2, __VA_ARGS__)
 
 int main()

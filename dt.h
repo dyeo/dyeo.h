@@ -534,8 +534,11 @@ extern bool isescape(const char c);
 extern bool isendchar(const char c);
 extern bool islongstring(const char *str);
 
+extern char *strndup(const char *s, size_t n);
 extern char *stresc(const char *s);
 extern char *strunesc(const char *s);
+extern char *strnesc(const char *s, size_t n);
+extern char *strnunesc(const char *s, size_t n);
 
 extern char *sprintfx(const char *format, ...);
 extern size_t strnchrn(const char *string, const char c, const size_t n);
@@ -1940,25 +1943,24 @@ char *dt_loads_raw_string(const char *string, size_t *offset)
 {
   size_t start = *offset;
   size_t end   = start;
-  if (string[end] == '"')
+  if (string[start] == '"')
   {
     start++;
     end++;
-
     bool escaped = false;
-    while (string[end] && string[end] != '"')
+    while (string[end] && (string[end] != '"' || escaped))
     {
       if (escaped)
       {
         escaped = false;
       }
-      if (string[end] == '\\')
+      else if (string[end] == '\\')
       {
         escaped = true;
       }
       end++;
     }
-    *offset += 2;
+    *offset += 2; // ""
   }
   else
   {
@@ -1969,11 +1971,7 @@ char *dt_loads_raw_string(const char *string, size_t *offset)
   }
 
   size_t len = end - start;
-  char *res0 = _dt_malloc(len + 1);
-  _dt_memcpy(res0, string + start, len);
-  res0[len] = '\0';
-  char *res = strunesc(res0);
-  _dt_free(res0);
+  char *res  = strnunesc(string + start, len);
   *offset += len;
   return res;
 }
@@ -2673,9 +2671,21 @@ bool islongstring(const char *str)
 
 // -----------------------------------------------------------------------------
 
+char *strndup(const char *s, size_t n)
+{
+  char *r = _dt_malloc(n + 1);
+  _dt_memcpy(r, s, n);
+  r[n] = '\0';
+  return r;
+}
+
 char *stresc(const char *s)
 {
-  int len = 0;
+  return strnesc(s, strlen(s));
+}
+
+char *strnesc(const char *s, size_t len)
+{
   for (int i = 0; s[i]; i++)
   {
     if (isescape(s[i]))
@@ -2692,7 +2702,7 @@ char *stresc(const char *s)
   }
 
   int j = 0;
-  for (int i = 0; s[i]; i++)
+  for (int i = 0; i < len; i++)
   {
     if (s[i] == '\n')
     {
@@ -2719,10 +2729,10 @@ char *stresc(const char *s)
       result[j++] = '\\';
       result[j++] = '\\';
     }
-    else if (s[i] == '\"')
+    else if (s[i] == '"')
     {
       result[j++] = '\\';
-      result[j++] = '\"';
+      result[j++] = '"';
     }
     else
     {
@@ -2736,7 +2746,11 @@ char *stresc(const char *s)
 
 char *strunesc(const char *s)
 {
-  int len      = strlen(s);
+  return strnunesc(s, strlen(s));
+}
+
+char *strnunesc(const char *s, size_t len)
+{
   char *result = (char *) _dt_malloc(len + 1);
   if (!result)
   {
@@ -2744,7 +2758,7 @@ char *strunesc(const char *s)
   }
 
   int j = 0;
-  for (int i = 0; s[i]; i++)
+  for (int i = 0; i < len; i++)
   {
     if (s[i] == '\\' && s[i + 1])
     {
@@ -2773,9 +2787,9 @@ char *strunesc(const char *s)
         result[j++] = '\\';
         i++;
       }
-      else if (s[i + 1] == '\"')
+      else if (s[i + 1] == '"')
       {
-        result[j++] = '\"';
+        result[j++] = '"';
         i++;
       }
       else

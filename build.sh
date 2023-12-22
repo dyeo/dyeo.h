@@ -20,7 +20,6 @@ cp -r ../res res
 
 declare -A BUILD_ARGS
 declare -A TEST_ARGS
-TEST_ARGS["args"]="-a 1 -a 2 -a 3 -a 4 -a 5"
 BUILD_ARGS["gm"]="-lm"
 BUILD_ARGS["wav"]="-lm"
 if [[ $OS == win32 ]]; then
@@ -32,13 +31,26 @@ else
     BUILD_ARGS["udp"]="-lnsl -lresolv"
 fi
 
-if [[ "$1" == "ALL" ]]; then
+COMPILE_ARGS=()
+RUNTIME_ARGS=()
+SWITCH=false
+for arg in "$@"; do
+    if $SWITCH; then
+        RUNTIME_ARGS+=("$arg")
+    elif [[ "$arg" == "--" ]]; then
+        SWITCH=true
+    else
+        COMPILE_ARGS+=("$arg")
+    fi
+done
+
+if [[ "${COMPILE_ARGS[0]}" == "ALL" ]]; then
     APPS=()
     for file in ../*.h; do
         [ -f "$file" ] && APPS+=("$(basename "$file" .h)")
     done
 else
-    APPS=("$@")
+    APPS=("${COMPILE_ARGS[@]}")
 fi
 
 for APP in "${APPS[@]}"; do
@@ -53,13 +65,13 @@ for APP in "${APPS[@]}"; do
         -o "./$APP$EXT" \
         $LIBRARIES"
     fi
-    echo $cc
+    echo + $cc
     eval $cc
     if [[ -n "${TEST_ARGS[$APP]}" ]]; then
-        exe="./"$APP$EXT" ${TEST_ARGS[$APP]}"
+        exe="./"$APP$EXT" ${TEST_ARGS[$APP]} ${RUNTIME_ARGS[*]}"
     else
-        exe="./"$APP$EXT""
+        exe="./"$APP$EXT" ${RUNTIME_ARGS[*]}"
     fi
-    echo $exe
+    echo + $exe
     eval $exe
 done

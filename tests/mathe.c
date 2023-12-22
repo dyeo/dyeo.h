@@ -1,5 +1,4 @@
 #define MATHE_IMPLEMENTATION
-#define MATHE_DEBUG
 #include "../mathe.h"
 #include "../test.h"
 
