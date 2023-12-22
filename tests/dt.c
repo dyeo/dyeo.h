@@ -7,7 +7,7 @@ int main()
   const char *files[] = {"./res/test.dt", "./res/test.json", "./res/mid.json",
                          "./res/large.json"};
   test_group(dt, {
-    for (int i = 2; i < 3; ++i)
+    for (int i = 0; i < 1; ++i)
     {
       const char *filepath = files[i];
       dt_node *node        = dt_loadf(filepath);

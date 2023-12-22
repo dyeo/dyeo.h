@@ -14,9 +14,11 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 
 // -----------------------------------------------------------------------------
 
@@ -45,9 +47,12 @@
 #ifndef _dt_memcpy
 #define _dt_memcpy(_DstPtr, _SrcPtr, _Size) memcpy(_DstPtr, _SrcPtr, _Size)
 #endif
+#ifndef _dt_memmov
+#define _dt_memmov(_DstPtr, _SrcPtr, _Size) memmove(_DstPtr, _SrcPtr, _Size)
+#endif
 
 #ifndef byte
-typedef unsigned char byte;
+typedef uint8_t byte;
 #endif
 
 // for security against attackers, seed the library with a random number, at
@@ -166,15 +171,15 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
   ((void) ((ArrPtr) ? _dt_free(dt_arrhead(ArrPtr)) : (void) 0), (ArrPtr) = NULL)
 #define dt_arrdel(ArrPtr, Index) dt_arrdeln(ArrPtr, Index, 1)
 #define dt_arrdeln(ArrPtr, Index, Len)                                         \
-  (memmove(&(ArrPtr)[Index], &(ArrPtr)[(Index) + (Len)],                       \
-           sizeof *(ArrPtr) * (dt_arrhead(ArrPtr)->len - (Len) - (Index))),    \
+  (_dt_memmov(&(ArrPtr)[Index], &(ArrPtr)[(Index) + (Len)],                    \
+              sizeof *(ArrPtr) * (dt_arrhead(ArrPtr)->len - (Len) - (Index))), \
    dt_arrhead(ArrPtr)->len -= (Len))
 #define dt_arrdelswap(ArrPtr, Index)                                           \
   ((ArrPtr)[Index] = dt_arrlast(ArrPtr), dt_arrhead(ArrPtr)->len -= 1)
 #define dt_arrinsn(ArrPtr, Index, Len)                                         \
   (dt_arraddn((ArrPtr), (Len)),                                                \
-   memmove(&(ArrPtr)[(Index) + (Len)], &(ArrPtr)[Index],                       \
-           sizeof *(ArrPtr) * (dt_arrhead(ArrPtr)->len - (Len) - (Index))))
+   _dt_memmov(&(ArrPtr)[(Index) + (Len)], &(ArrPtr)[Index],                    \
+              sizeof *(ArrPtr) * (dt_arrhead(ArrPtr)->len - (Len) - (Index))))
 #define dt_arrins(ArrPtr, Index, v)                                            \
   (dt_arrinsn((ArrPtr), (Index), 1), (ArrPtr)[Index] = (v))
 
@@ -194,37 +199,17 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
 #define dt_arraddcstr(ArrPtr, CStr)                                            \
   do                                                                           \
   {                                                                            \
-    const char *__cstr = CStr;                                                 \
-    size_t __cstrl     = strlen(__cstr);                                       \
-    dt_arrmaygrow(ArrPtr, __cstrl);                                            \
-    _dt_memcpy(&(ArrPtr)[dt_arrlen(ArrPtr)], __cstr, __cstrl);                 \
-    dt_arraddnoff(ArrPtr, __cstrl);                                            \
-  } while (0)
-
-#define dt_arrinscstr(ArrPtr, Index, CStr)                                     \
-  do                                                                           \
-  {                                                                            \
-    const char *__cstr = CStr;                                                 \
-    size_t __cstrl     = strlen(__cstr);                                       \
-    size_t __cstri     = (dt_arrlen(ArrPtr) + (Index)) % dt_arrlen(ArrPtr);    \
-    dt_arrinsn(ArrPtr, __cstri, __cstrl);                                      \
-    _dt_memcpy(&(ArrPtr)[__cstri], __cstr, __cstrl);                           \
+    char *__cstr   = CStr;                                                     \
+    size_t __cstrl = strlen(__cstr);                                           \
+    char *__ptr    = dt_arraddnptr(ArrPtr, __cstrl);                           \
+    _dt_memcpy(__ptr, __cstr, __cstrl);                                        \
   } while (0)
 
 #define dt_arraddbytes(ArrPtr, Bytes, Len)                                     \
   do                                                                           \
   {                                                                            \
-    dt_arrmaygrow(ArrPtr, Len);                                                \
-    _dt_memcpy(&(ArrPtr)[dt_arrlen(ArrPtr)], Bytes, Len);                      \
-    dt_arraddnoff(ArrPtr, Len);                                                \
-  } while (0)
-
-#define dt_arrinsbytes(ArrPtr, Index, Bytes, Len)                              \
-  do                                                                           \
-  {                                                                            \
-    size_t __cstri = (dt_arrlen(ArrPtr) + (Index)) % dt_arrlen(ArrPtr);        \
-    dt_arrinsn(ArrPtr, __cstri, Len);                                          \
-    _dt_memcpy(&(ArrPtr)[__cstri], Bytes, Len);                                \
+    byte *__ptr = dt_arraddnptr(ArrPtr, Len);                                  \
+    _dt_memcpy(__ptr, Bytes, Len);                                             \
   } while (0)
 
 #define dt_arrconcat(DstArrPtr, SrcArrPtr)                                     \
@@ -232,9 +217,8 @@ extern void *dt_smpmode_impl(size_t elemsize, int mode);
   {                                                                            \
     size_t dstlen = dt_arrlenu(DstArrPtr);                                     \
     size_t srclen = dt_arrlenu(SrcArrPtr);                                     \
-    dt_arrmaygrow(DstArrPtr, srclen);                                          \
-    _dt_memcpy(&(DstArrPtr)[dstlen], SrcArrPtr, srclen);                       \
-    dt_arrsetlen(DstArrPtr, dstlen + srclen);                                  \
+    void *__arr   = dt_arraddnptr(DstArrPtr, srclen);                          \
+    _dt_memcpy(__arr, SrcArrPtr, srclen);                                      \
   } while (0)
 
 #define dt_arrtonullterm(ArrPtr) dt_arrtonulltermf((ArrPtr), sizeof *(ArrPtr))
@@ -641,33 +625,22 @@ DT_TYPES_LIST
     }                                                                          \
   } while (0)
 
-#include <stdint.h>
-#define IS_LITTLE_ENDIAN (*(uint16_t *) "\xff\0" < 0x100)
-
 #define dt_pushval(Type, Bytes, Value)                                         \
   do                                                                           \
   {                                                                            \
     size_t len         = sizeof(Type);                                         \
     const byte *buffer = ((void *) &(Value));                                  \
-    dt_arrmaygrow(bytes, len);                                                 \
-    for (size_t i = 0; i < len; ++i)                                           \
-    {                                                                          \
-      dt_arradd(bytes, buffer[i]);                                             \
-    }                                                                          \
+    dt_arraddbytes(Bytes, buffer, len);                                        \
   } while (0)
 
 #define dt_popval(Type, Bytes, Offset, Value)                                  \
   do                                                                           \
   {                                                                            \
-    size_t len = sizeof(Type);                                                 \
-    size_t res = 0llu;                                                         \
-    for (size_t i = 0; i < len; ++i)                                           \
-    {                                                                          \
-      byte bval = bytes[*(Offset) + i];                                        \
-      res |= (((size_t) bval) << (8 * i));                                     \
-    }                                                                          \
-    *(Offset) += len;                                                          \
-    Value = (Type) res;                                                        \
+    size_t __len = sizeof(Type);                                               \
+    Type res     = 0;                                                          \
+    _dt_memcpy(&res, Bytes + *Offset, __len);                                  \
+    *(Offset) += __len;                                                        \
+    Value = res;                                                               \
   } while (0)
 
 #endif //_DT_H
@@ -1659,8 +1632,8 @@ void *dt_mapdel_key(void *a, size_t elemsize, void *key, size_t keysize,
         if (old_index != final_index)
         {
           // swap delete
-          memmove((char *) a + elemsize * old_index,
-                  (char *) a + elemsize * final_index, elemsize);
+          _dt_memmov((char *) a + elemsize * old_index,
+                     (char *) a + elemsize * final_index, elemsize);
 
           // now find the slot for the last element
           if (mode == DT_MAP_STRING)
@@ -1706,7 +1679,7 @@ static char *dt_strdup(char *str)
   // rolling our own also avoids problem of strdup vs _strdup
   size_t len = strlen(str) + 1;
   char *p    = (char *) _dt_realloc(0, len);
-  memmove(p, str, len);
+  _dt_memmov(p, str, len);
   return p;
 }
 
@@ -1744,7 +1717,7 @@ char *dt_stralloc(dt_strarena_t *a, char *str)
       // doubling and handling those as well
       dt_strblock_t *sb =
         (dt_strblock_t *) _dt_realloc(0, sizeof(*sb) - 8 + len);
-      memmove(sb->storage, str, len);
+      _dt_memmov(sb->storage, str, len);
       if (a->storage)
       {
         // insert it after the first element, so that we don't waste
@@ -1773,7 +1746,7 @@ char *dt_stralloc(dt_strarena_t *a, char *str)
   DT_ASSERT(len <= a->remaining);
   p = a->storage->storage + a->remaining - len;
   a->remaining -= len;
-  memmove(p, str, len);
+  _dt_memmov(p, str, len);
   return p;
 }
 
@@ -1857,9 +1830,9 @@ dt_node *dt_loads_impl(const char *string, size_t *offset)
 #define X(NAME, ...)                                                           \
   if (dt_test_##NAME(string, offset))                                          \
   {                                                                            \
-    _dt_cons_cmt(string, offset);                                          \
+    _dt_cons_cmt(string, offset);                                              \
     dt_node *res = dt_loads_##NAME(string, offset);                            \
-    _dt_cons_cmt(string, offset);                                          \
+    _dt_cons_cmt(string, offset);                                              \
     return res;                                                                \
   }
   DT_TYPES_LIST
@@ -2086,7 +2059,7 @@ void dt_dumpb_raw_string(const char *string, byte *bytes)
   char *escstr = stresc(string);
   size_t slen  = strlen(escstr);
   dt_arrmaygrow(bytes, sizeof(size_t) + slen);
-  printf("dumpb_raw_string(%s, %p), (%llu)\n", escstr, bytes, strlen(escstr));
+  printf("dumpb(\"%s\", %p), (%llu)\n", escstr, bytes, strlen(escstr));
   dt_pushval(size_t, bytes, slen);
   dt_arraddbytes(bytes, escstr, slen);
   free(escstr);
