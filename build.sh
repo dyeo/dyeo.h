@@ -14,9 +14,9 @@ fi
 
 mkdir -p out
 mkdir -p res
+cp -r res/ out/res/
 
 cd out
-cp -r ../res res
 
 declare -A BUILD_ARGS
 declare -A TEST_ARGS
